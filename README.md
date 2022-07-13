@@ -1,1 +1,8 @@
-# deep_movie_classification
+# Deep Movie Classification
+
+## Instructions
+```shell
+source env/bin/activate
+```
+
+
