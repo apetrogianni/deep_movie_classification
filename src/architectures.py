@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 
 
 def get_model(model, model_params):
-    # for multiple models
+    # choose which model to use
     models = {
         "bin_lstm": LSTMModelBinary,
         "multi_lstm": LSTMModelMulti,
