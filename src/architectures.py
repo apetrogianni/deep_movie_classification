@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..')
 import torch
 import torch.nn as nn
 from collections import OrderedDict
