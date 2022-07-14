@@ -2,8 +2,14 @@
 
 ## Instructions
 ```shell
-virtualenv env
-source env/bin/activate
+virtualenv .env
+source .env/bin/activate
+```
+
+## Install requirements
+
+```shell
+pip install -r requirements.txt
 ```
 
 
