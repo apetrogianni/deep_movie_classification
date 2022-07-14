@@ -112,6 +112,7 @@ if __name__ == "__main__":
         for each class-folder get the list of np files 
         in the folder (where features can have been saved):
         """
+        print(os.path.basename(folder))
         np_feature_files = fnmatch.filter(os.listdir(folder), '*mp4.npy')
         num_of_shots_per_class.append(len(np_feature_files))
         # TODO: dictionary with class names and num of mp4 files
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     if len(videos_path) == 2:
         print("\n============== BINARY CLASSIFICATION ==============")
         for i in range(0, num_of_folds):
-            n_epochs = 5
+            n_epochs = 1
             output_size = 1
             input_size = 43  # num of features
             hidden_size = 100
