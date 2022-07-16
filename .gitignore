@@ -6,3 +6,5 @@ __pycache__/
 *.pt
 *.pkl
 *.pyc
+*.zip
+*.csv
