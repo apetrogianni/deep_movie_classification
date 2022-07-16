@@ -22,11 +22,10 @@ def feature_extraction(videos_path):
         np_feature_files = fnmatch.filter(os.listdir(folder), '*_features.npy')
         np_fnames_files = fnmatch.filter(os.listdir(folder), '*_f_names.npy')
         
-        # check if feature extraction 
-        # is done for this class-folder
         if len(np_feature_files) <= 0 and len(np_fnames_files) <= 0:
-            # calculate features for current folder
-
+            # if feature extraction is not done
+            # for this class-folder, calculate 
+            # features for current folder
             x["x_{0}".format(folder)], \
             name_of_files["paths_{0}".format(folder)], \
             f_names['f_name_{0}'.format(folder)] = \
