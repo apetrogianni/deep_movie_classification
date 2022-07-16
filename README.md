@@ -17,7 +17,9 @@ git submodule update
 > Clone "multimodal_movie_analysis" repo for the feature extraction process
 
 ### 1.1 Install requirements
-
+```shell
+sudo apt install ffmpeg
+```
 ```shell
 pip3 install -r requirements.txt
 ```
