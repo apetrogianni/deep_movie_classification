@@ -1,6 +1,6 @@
 # Deep Movie Classification
 
-## Setup
+## 1. Setup
 ```shell
 virtualenv env
 source env/bin/activate
@@ -14,16 +14,18 @@ git submodule add https://github.com/tyiannak/multimodal_movie_analysis.git mult
 git submodule init 
 git submodule update
 ```
-> Clone multimodal_movie_analysis repo for the feature extraction process
+> Clone "multimodal_movie_analysis" repo for the feature extraction process
 
-### Install requirements
+### 1.1 Install requirements
 
 ```shell
 pip3 install -r requirements.txt
 ```
 
-
 You can download the data from the ["movie_shots_by_experiment"](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature_extraction process)_ for the movie shots, divided into 4 different experiments.
+
+
+
 
 <details><summary>Experiments</summary>
 <p> 
