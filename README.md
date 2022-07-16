@@ -7,7 +7,7 @@ source env/bin/activate
 ```
 > Use a virtual environment
 ```shell
-git clone --recurse-submodules https://github.com/tyiannak/multimodal_movie_analysis.git
+git submodule add https://github.com/tyiannak/multimodal_movie_analysis.git multimodal_movie_analysis
 ```
 > Clone multimodal_movie_analysis repo for the feature extraction process
 
