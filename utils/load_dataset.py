@@ -35,13 +35,13 @@ def load_data(X, y, check_train, scaler):
 
     for index, data in enumerate(split_dataset):
         """
-        data[0] corresponds to ---> .npy names
-        data[1] corresponds to ---> y labels
+        data[0] corresponds to--->.npy movie-shot names
+        data[1] corresponds to--->y labels
         """
-
         X_to_tensor = np.load(data[0])
 
         # keep only specific features
+        # (remove histograms)
         X_to_tensor = X_to_tensor[:, 45:89]
         X_to_tensor = np.array([ndimage.median_filter(s, 4)
                                 for s in X_to_tensor.T]).T
