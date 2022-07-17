@@ -1,17 +1,15 @@
 """
 Usage example:
-python3 train.py -v <class_folder_name> <class_folder_name> ... <class_folder_name>
 
-i.e.
-python3 train.py -v ../3_class/Static ../3_class/Zoom ../3_class/Vertical_and_horizontal_movements
+python3 train.py -v home/3_class/Static home/3_class/Zoom home/3_class/Vertical_and_horizontal_movements
 
--f to run for multiple folds
-
-python3 train.py -v /media/antonia/Seagate/datasets/Hand_Crafted_dataset/2_class/Non_Static /media/antonia/Seagate/datasets/Hand_Crafted_dataset/2_class/Static
+-f to run for multiple folds:
+python3 train.py -v home/3_class/Static home/3_class/Zoom home/3_class/Vertical_and_horizontal_movements -f 10
 """
 from copyreg import pickle
 from operator import mod
 import os
+import sched
 import sys
 sys.path.append('..')
 import torch
@@ -101,31 +99,35 @@ def weight_init(m):
 def LSTM_train(dataset, batch_size, input_size,\
     hidden_size, num_layers, output_size,
     dropout, learning_rate, weight_decay,
-    choose_model, criterion, bin_class_task=True):
+    choose_model, criterion, class_mapping,
+    bin_class_task=True):
     
     train_loader, val_loader, test_loader = \
                 data_preparation(dataset, batch_size)
             
     # LSTM params
-    model_params = {'input_size': input_size,
-                    'hidden_size': hidden_size,
-                    'num_layers': num_layers,
-                    'output_size': output_size,
-                    'dropout_prob': dropout}
-    
-    model = get_model(choose_model, model_params)
-    
+    model_params = {
+        'input_size': input_size,
+        'hidden_size': hidden_size,
+        'num_layers': num_layers,
+        'output_size': output_size,
+        'dropout_prob': dropout}
+
+    model = get_model(choose_model, model_params)    
     optimizer = optim.Adam(model.parameters(),\
         lr=learning_rate, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
         'min', verbose=True)
 
-    model_info["criterion"] = criterion
-    model_info["optimizer"] = optimizer
-    model_info["batch_size"] = batch_size
-    model_info["scheduler"] = scheduler
-    model_info["model_params"] = model_params
-    model_info["model"] = model
+    model_info = {
+        'criterion': criterion,
+        'optimizer': optimizer,
+        'batch_size': batch_size,
+        'scheduler': scheduler,
+        'class_mapping': class_mapping,
+        'model_params': model_params,
+        'model': model
+    }
     
     #initialize weights for both LSTM and Sequential
     model.lstm.apply(weight_init)
@@ -188,7 +190,7 @@ if __name__ == "__main__":
         for i in range(0, num_of_folds):
             print(f"---- Fold {i+1}/{num_of_folds} ----")
             # create LSTM dataset & DataLoaders
-            dataset = create_dataset(videos_path)
+            dataset, class_mapping = create_dataset(videos_path)
 
             n_epochs = 100
             input_size = 43
@@ -202,11 +204,14 @@ if __name__ == "__main__":
 
             criterion = nn.BCEWithLogitsLoss()
 
-            model_info, preds, vals = LSTM_train(dataset=dataset,batch_size=batch_size,\
-                input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
-                output_size=output_size, dropout=dropout, learning_rate=lr, 
+            model_info, preds, vals = \
+                LSTM_train(dataset=dataset,batch_size=batch_size,
+                input_size=input_size, hidden_size=hidden_size, 
+                num_layers=num_layers, output_size=output_size, 
+                dropout=dropout, learning_rate=lr, 
                 weight_decay=weight_decay, choose_model='bin_lstm',
-                criterion=criterion, bin_class_task=True)  
+                criterion=criterion, class_mapping=class_mapping, 
+                bin_class_task=True)  
 
             # Save Loss Function, optimizer, scheduler,
             # batch_size, model_params and the model in a .pkl file
@@ -219,8 +224,8 @@ if __name__ == "__main__":
         class_labels = list(set(vals))
         vals = torch.Tensor(vals)
 
-        np.save("LSTM_binary_y_test.npy", vals)
-        np.save("LSTM_binary_y_pred.npy", preds)
+        np.save("binary_LSTM_y_test.npy", vals)
+        np.save("binary_LSTM_y_pred.npy", preds)
 
         accuracy, f1_score_macro, cm, class_labels, precision_recall = \
             calculate_bin_aggregated_metrics(preds, vals.float(), class_labels)
@@ -237,7 +242,7 @@ if __name__ == "__main__":
         os.remove("checkpoint.pt")
         print("==============-----------------------==============")
     else: 
-        print("\n======= MULTI-LABEL CLASSIFICATION =======")
+        print("\n=============== MULTI-LABEL CLASSIFICATION ===============")
         num_of_shots_per_class_list = list(num_of_shots_per_class.values()) 
         major_class = max(num_of_shots_per_class_list)
         weights = []
@@ -255,26 +260,53 @@ if __name__ == "__main__":
         for i in range(0, num_of_folds):
             print(f"---- Fold {i+1}/{num_of_folds} ----")
             # create LSTM dataset & DataLoaders
-            dataset = create_dataset(videos_path)
+            dataset, class_mapping = create_dataset(videos_path)
 
-            n_epochs = 100
-            input_size = 43 
-            num_layers = 1
-            batch_size = 32
-            hidden_size = 64
-            dropout = 0.1
-            lr = 1e-2
-            weight_decay = 1e-8
-            output_size = len(videos_path)
+            # Select parameters for each experiment
+            if len(videos_path) == 3:
+                n_epochs = 1
+                input_size = 43 
+                num_layers = 1
+                batch_size = 32
+                hidden_size = 64
+                dropout = 0.1
+                lr = 1e-2
+                weight_decay = 1e-8
+                output_size = len(videos_path)
+                multi_model= '3_class_lstm'
+            elif len(videos_path) == 4:
+                n_epochs = 100
+                input_size = 43 
+                num_layers = 1
+                batch_size = 32
+                hidden_size = 40
+                dropout = 0.0
+                lr = 1e-2
+                weight_decay = 0.0
+                output_size = len(videos_path)
+                multi_model= '4_class_lstm'
+            elif len(videos_path) == 10:
+                n_epochs = 100
+                input_size = 43 
+                num_layers = 1
+                batch_size = 13
+                hidden_size = 35
+                dropout = 0.2
+                lr = 1e-3
+                weight_decay = 1e-8
+                output_size = len(videos_path)
+                multi_model= '10_class_lstm'
 
             criterion = nn.CrossEntropyLoss(weight=weights)
 
-            model_info, preds, vals = LSTM_train(dataset=dataset,batch_size=batch_size,\
-                input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
-                output_size=output_size, dropout=dropout, learning_rate=lr, 
-                weight_decay=weight_decay, choose_model='multi_lstm',
-                criterion=criterion, bin_class_task=False)  
-
+            model_info, preds, vals = \
+                LSTM_train(dataset=dataset,batch_size=batch_size,\
+                input_size=input_size, hidden_size=hidden_size, 
+                num_layers=num_layers, output_size=output_size, 
+                dropout=dropout, learning_rate=lr, weight_decay=weight_decay, 
+                choose_model=multi_model, criterion=criterion, 
+                class_mapping=class_mapping, bin_class_task=False)  
+            
             # Save Loss Function, optimizer, scheduler,
             # batch_size, model_params and the model in a .pkl file
             with open(str(len(videos_path))+'_class_best_model.pkl', 'wb') as f:
@@ -285,16 +317,14 @@ if __name__ == "__main__":
         class_labels = list(set(vals))
         vals = torch.Tensor(vals)
 
-        np.save("LSTM_" + str(len(videos_path)) + "_class_y_test.npy", vals)
-        np.save("LSTM_" + str(len(videos_path)) + "_class_y_pred.npy", preds)
+        np.save(str(len(videos_path)) + "_class_LSTM_" + "_y_test.npy", vals)
+        np.save(str(len(videos_path)) + "_class_LSTM_" + "_y_pred.npy", preds)
 
         accuracy, f1_score_macro, cm, class_labels = \
             calculate_aggregated_metrics(preds, vals, class_labels)
 
-        print(f"{num_of_folds}-fold Classification Report:\n"
+        print(f"\n{num_of_folds}-fold Classification Report:\n"
             "accuracy: {:0.2f}%,".format(accuracy * 100),
-            # "precision: {:0.2f}%,".format(precision_recall[0] * 100),
-            # "recall: {:0.2f}%,".format(precision_recall[1] * 100),
             "f1_score (macro): {:0.2f}%".format(f1_score_macro * 100))
         print("\nConfusion matrix\n", cm)
 
