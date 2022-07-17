@@ -84,3 +84,5 @@ venv.bak/
 *.zip
 *.csv
 *names.txt
+
+*__pycache__/generic_model.cpython-38.pyc
