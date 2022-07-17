@@ -1,11 +1,14 @@
 # Deep Movie Classification
 
-## 1. Setup
+## 1 Setup
+
+### 1.1 Add "multimodal movie analysis" as a submodule
+<!--
 ```shell
 virtualenv env
 source env/bin/activate
 ```
-> Use a virtual environment
+> Use a virtual environment-->
 
 <!-- ```shell
 git submodule add https://github.com/tyiannak/multimodal_movie_analysis.git multimodal_movie_analysis
@@ -14,33 +17,56 @@ git submodule add https://github.com/tyiannak/multimodal_movie_analysis.git mult
 git submodule init 
 git submodule update
 ```
-> Clone "multimodal_movie_analysis" repo for the feature extraction process
+> Clone "[multimodal_movie_analysis](https://github.com/tyiannak/multimodal_movie_analysis)" repo for the feature extraction process
 
-### 1.1 Install requirements
+### 1.2 Install requirements
 ```shell
 sudo apt install ffmpeg
 ```
 ```shell
 pip3 install -r requirements.txt
 ```
+### 1.3 Download the data
 
 You can download the data from the ["movie_shots_by_experiment"](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature_extraction process)_ for the movie shots, divided into 4 different experiments.
 
-
-
+## 2. Train LSTM Shot models
 
 <details><summary>Experiments</summary>
 <p> 
 
-Experiment | Number of classes
+Experiment | Classes
 | :--- | ---: 
-Binary   | Non_Static (818 shots) <br /> Static (985 shots)
+2_class   | Non_Static (818 shots) <br /> Static (985 shots)
 3_class  | Zoom (152 shots) <br />  Static (985 shots) <br /> Vertical_and_horizontal_movements (342 shots)
 4_class  | Vertical_movements (89 shots) <br /> Panoramic (253 shots) <br />Static (985 shots) <br /> Zoom (152 shots)
 10_class | Static (985 shots) <br /> Panoramic (207 shots) <br /> Zoom in (51 shots) <br /> Travelling_out (46 shots) <br /> Vertical_static (52 shots) <br /> Aerial (51 shots)<br /> Travelling_in (55 shots)<br /> Vertical_moving (37 shots)<br /> Handled (273 shots)<br /> Panoramic_lateral (46 shots)
 
 </p>
 </details>
+
+i.e. To train the LSTM model, for the 3-class experiment:
+
+```shell
+python3 train.py -v home/3_class/Zoom home/3_class/Static home/3_class/Vertical_and_horizontal_movements
+```
+
+> where _"home/3_class/<class_name>"_ is the full path of the class-folder 
+
+To get aggregated results for a specific number of folds use the flag "-f". For example, for 10-folds:
+
+```shell
+python3 train.py -v home/3_class/Zoom home/3_class/Static home/3_class/Vertical_and_horizontal_movements -f 10
+```
+
+The following files will be saved:
+ * `best_checkpoint.pt` the best model
+ * `3_class_best_model.pkl` the model parameteres & hyperparameters
+<!--  * `LSTM_3_class_y_pred.npy` the posteriors
+ * `LSTM_3_class_y_test.npy` the actual values -->
+
+
+
 
 
 
