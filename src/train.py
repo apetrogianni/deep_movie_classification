@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
             n_epochs = 100
             input_size = 43
-            num_layers = 1
+            num_layers = 2
             batch_size = 70
             hidden_size = 100
             dropout = 0.5
