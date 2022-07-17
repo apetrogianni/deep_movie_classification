@@ -1,5 +1,7 @@
 # Deep Movie Classification
 
+Two different methods are evaluated; one _static_, which is based on aggregated statistics on the feature sequence, and one _sequential_, that tries to predict the target class based on the input frame sequence. The former adopts an SVM algorithm with the appropriate data normalization and parameter tuning, while for the latter, an LSTM architecture was chosen. In order to obtain features representing the visual characteristics of a movie shot _(for the .mp4 files)_, the "[multimodal_movie_analysis](https://github.com/tyiannak/multimodal_movie_analysis)" repo was used. 
+
 ## 1 Setup
 
 ### 1.1 Add "multimodal movie analysis" as a submodule
@@ -30,7 +32,9 @@ pip3 install -r requirements.txt
 
 You can download the data from the ["movie_shots_by_experiment"](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature_extraction process)_ for the movie shots, divided into 4 different experiments.
 
-## 2. Train LSTM Shot models
+## 2. Train 
+
+By combining different shot categories, four classification tasks, one binary and three multi-label, are defined.
 
 <details><summary>Experiments</summary>
 <p> 
@@ -44,6 +48,8 @@ Experiment | Classes
 
 </p>
 </details>
+
+## 2.1 Sequential method
 
 i.e. To train the LSTM model, for the 3-class experiment:
 
