@@ -12,10 +12,12 @@ matplotlib.use('Agg')
 
 
 def get_model(model, model_params):
-    # choose which model to use
+    # choose between the 4 models
     models = {
         "bin_lstm": LSTMModelBinary,
-        "multi_lstm": LSTMModelMulti,
+        "3_class_lstm": LSTMModel3,
+        "4_class_lstm": LSTMModel4,
+        "10_class_lstm": LSTMModel10
     }
 
     return models.get(model.lower())(**model_params)
@@ -45,8 +47,8 @@ class LSTMModelBinary(nn.Module):
         # output shape:(batch_size,seq_length,hidden_size)
         output, _ = unpack(packed_output, batch_first=True)
         last_states = self.last_by_index(output, lengths)
-
         last_states = self.drop(last_states)
+
         output = self.fnn(last_states)
 
         return output
@@ -60,10 +62,10 @@ class LSTMModelBinary(nn.Module):
         return outputs.gather(1, idx.type(torch.int64)).squeeze()
 
 
-class LSTMModelMulti(nn.Module):
+class LSTMModel3(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers,
                  output_size, dropout_prob):
-        super(LSTMModelMulti, self).__init__()
+        super(LSTMModel3, self).__init__()
 
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -84,7 +86,84 @@ class LSTMModelMulti(nn.Module):
         packed_output, _ = self.lstm(X)
         output, _ = unpack(packed_output, batch_first=True)
         last_states = self.last_by_index(output, lengths)
+        last_states = self.drop(last_states)
 
+        output = self.fnn(last_states)
+
+        return output
+
+    @staticmethod
+    def last_by_index(outputs, lengths):
+        # Index of the last output for each sequence.
+        idx = (lengths - 1).view(-1, 1).expand(outputs.size(0),
+                                               outputs.size(2)).unsqueeze(1)
+
+        return outputs.gather(1, idx.type(torch.int64)).squeeze()
+
+
+class LSTMModel4(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers,
+                 output_size, dropout_prob):
+        super(LSTMModel4, self).__init__()
+
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
+                            batch_first=True)  # , dropout=dropout_prob)
+
+        self.fnn = nn.Sequential(OrderedDict([
+            ('relu1', nn.ReLU()),
+            ('bn1', nn.BatchNorm1d(self.hidden_size)),
+            ('fc1', nn.Linear(self.hidden_size, output_size)),
+        ]))
+
+        self.drop = nn.Dropout(p=dropout_prob)
+
+    def forward(self, X, lengths):
+        # Forward propagate LSTM
+        packed_output, _ = self.lstm(X)
+        output, _ = unpack(packed_output, batch_first=True)
+        last_states = self.last_by_index(output, lengths)
+        last_states = self.drop(last_states)
+
+        output = self.fnn(last_states)
+
+        return output
+
+    @staticmethod
+    def last_by_index(outputs, lengths):
+        # Index of the last output for each sequence.
+        idx = (lengths - 1).view(-1, 1).expand(outputs.size(0),
+                                               outputs.size(2)).unsqueeze(1)
+
+        return outputs.gather(1, idx.type(torch.int64)).squeeze()
+
+
+class LSTMModel10(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers,
+                 output_size, dropout_prob):
+        super(LSTMModel10, self).__init__()
+
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
+                            batch_first=True)  # , dropout=dropout_prob)
+
+        self.fnn = nn.Sequential(OrderedDict([
+            ('relu1', nn.ReLU()),
+            ('bn1', nn.BatchNorm1d(self.hidden_size)),
+            ('fc1', nn.Linear(self.hidden_size, output_size)),
+        ]))
+
+        self.drop = nn.Dropout(p=dropout_prob)
+
+    def forward(self, X, lengths):
+        # Forward propagate LSTM
+        packed_output, _ = self.lstm(X)
+        output, _ = unpack(packed_output, batch_first=True)
+        last_states = self.last_by_index(output, lengths)
         last_states = self.drop(last_states)
 
         output = self.fnn(last_states)
