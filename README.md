@@ -19,7 +19,7 @@ git submodule add https://github.com/tyiannak/multimodal_movie_analysis.git mult
 git submodule init 
 git submodule update
 ```
-> Clone "[multimodal_movie_analysis](https://github.com/tyiannak/multimodal_movie_analysis)" repo for the feature extraction process
+> Clones the "[multimodal_movie_analysis](https://github.com/tyiannak/multimodal_movie_analysis)" repo for the feature extraction process
 
 ### 1.2 Install requirements
 ```shell
@@ -30,11 +30,11 @@ pip3 install -r requirements.txt
 ```
 ### 1.3 Download the data
 
-You can download the data from the ["movie_shots_by_experiment"](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature_extraction process)_ for the movie shots, divided into 4 different experiments.
+You can download the data from the ["movie_shots_by_experiment"](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature extraction process)_ for the movie shots, divided into 4 different experiments.
 
 ## 2. Train 
 
-By combining different shot categories; four classification tasks, one binary and three multi-label, are defined.
+By combining different shot categories; four _(one binary and three multi-label)_ classification tasks are defined.
 
 <details><summary>Experiments</summary>
 <p> 
