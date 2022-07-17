@@ -131,8 +131,7 @@ class Optimization:
                 'optimizer': optimizer.state_dict(),
             }
 
-            print(f"[{epoch}/{n_epochs}] Training loss: {train_step_loss:.4f}"+
-                "\t Validation loss: {validation_loss:.4f}")
+            print(f"[{epoch}/{n_epochs}] Training loss: {train_step_loss:.4f}\t Validation loss: {validation_loss:.4f}")
             print("accuracy: {:0.2f}%,".format(accuracy * 100), "f1_score: {:0.2f}%".format(f1_score_macro * 100))
 
             # save checkpoint
