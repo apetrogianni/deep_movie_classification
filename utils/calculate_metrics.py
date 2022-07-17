@@ -131,8 +131,6 @@ def calculate_aggregated_metrics(y_pred, y_test, class_labels):
 
     y_pred = y_pred_tags.float()
 
-    print(class_labels)
-
     conf_mat = confusion_matrix(y_test, y_pred)
     f1_score_macro = f1_score(y_test, y_pred, average='macro')
     acc = accuracy_score(y_test, y_pred)
