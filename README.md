@@ -34,7 +34,7 @@ You can download the data from the ["movie_shots_by_experiment"](https://drive.g
 
 ## 2. Train 
 
-By combining different shot categories, four classification tasks, one binary and three multi-label, are defined.
+By combining different shot categories; four classification tasks, one binary and three multi-label, are defined.
 
 <details><summary>Experiments</summary>
 <p> 
