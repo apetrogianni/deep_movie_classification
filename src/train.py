@@ -234,6 +234,7 @@ if __name__ == "__main__":
 
         np.set_printoptions(precision=2)
         plot_bin_confusion_matrix('LSTM', cm, classes=class_labels)
+        os.remove("checkpoint.pt")
         print("==============-----------------------==============")
     else: 
         print("\n======= MULTI-LABEL CLASSIFICATION =======")
@@ -299,4 +300,5 @@ if __name__ == "__main__":
 
         np.set_printoptions(precision=2)
         plot_confusion_matrix('LSTM', cm, videos_path=videos_path, classes=class_labels)
+        os.remove("checkpoint.pt")
         print("=======----------------------------=======")
