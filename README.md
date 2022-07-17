@@ -57,7 +57,7 @@ i.e. To train the LSTM model, for the 3-class experiment:
 python3 src/train.py -v home/3_class/Zoom home/3_class/Static home/3_class/Vertical_and_horizontal_movements
 ```
 
-> where _"home/3_class/<class_name>"_ is the full path of the class-folder 
+> where _"home/3_class/<class_name>"_ is the full path of the class-folder, containing the .mp4 files
 
 To get aggregated results for a specific number of folds use the flag "-f". For example, for 10-folds:
 
