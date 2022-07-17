@@ -1,9 +1,3 @@
-"""
-Usage example:
-python3 video_classification.py -v <class_folder_name> <class_folder_name> ... <class_folder_name> 
--f to run for multiple folds
-"""
-
 import sys
 sys.path.append('..')
 import torch
@@ -36,7 +30,6 @@ class Optimization:
 
         for epoch in range(1, n_epochs + 1):
             counter_epoch += 1
-
             train_losses = []
             val_losses = []
             val_predictions = []
@@ -47,7 +40,7 @@ class Optimization:
             # enumerate mini batches
             for batch_idx, batch_info in enumerate(train_loader):
                 """
-                batch_idx -------> batch id
+                batch_idx     ---> batch id
                 batch_info[0] ---> padded arrays in each batch
                 batch_info[1] ---> labels (y) in each batch
                 batch_info[2] ---> original length of each sequence
@@ -58,9 +51,8 @@ class Optimization:
                 X_train = batch_info[0]
                 y_train = batch_info[1]
                 X_train_original_len = batch_info[2]
-
-                X_train_packed = pack(X_train.float(), X_train_original_len, 
-                                      batch_first=True)
+                X_train_packed = \
+                    pack(X_train.float(), X_train_original_len, batch_first=True)
 
                 with torch.set_grad_enabled(True):
                     self.model.train()
@@ -73,7 +65,8 @@ class Optimization:
                     if bin_class_task:
                         loss = self.loss_fn(output, y_train.float())
                     else: 
-                        loss = self.loss_fn(output, y_train.type(torch.LongTensor))
+                        loss = self.loss_fn(output, \
+                            y_train.type(torch.LongTensor))
 
                     # Computes the gradients
                     loss.backward()
@@ -87,13 +80,12 @@ class Optimization:
 
             # validation process
             with torch.no_grad():
-
                 for val_batch_idx, val_batch_info in enumerate(val_loader):
                     X_val = val_batch_info[0]
                     y_val = val_batch_info[1]
                     X_val_original_len = val_batch_info[2]
-
-                    X_val_packed = pack(X_val.float(), X_val_original_len, batch_first=True)
+                    X_val_packed = \
+                        pack(X_val.float(), X_val_original_len, batch_first=True)
 
                     self.model.eval()
                     
@@ -112,18 +104,17 @@ class Optimization:
                 if bin_class_task:
                     val_values = np.concatenate(val_values).ravel()
                     val_predictions = np.concatenate(val_predictions).ravel()
-
                     val_values_tensor = (torch.Tensor(val_values))
                     val_predictions_tensor = (torch.Tensor(val_predictions))
 
-                    accuracy, f1_score_macro, cm, _ = calculate_bin_metrics(val_predictions_tensor, val_values_tensor)
+                    accuracy, f1_score_macro, cm, _ = \
+                        calculate_bin_metrics(val_predictions_tensor, val_values_tensor)
 
                     validation_loss = np.mean(val_losses)
                     self.val_loss.append(validation_loss)
                 else: 
                     val_values = np.concatenate(val_values).ravel()
                     val_predictions = np.concatenate(val_predictions)
-
                     val_values_tensor = (torch.Tensor(val_values))
                     val_predictions_tensor = (torch.Tensor(val_predictions))
 
@@ -132,7 +123,7 @@ class Optimization:
                     validation_loss = np.mean(val_losses)
                     self.val_loss.append(validation_loss)
 
-            # create checkpoint variable and add important data
+            # create checkpoint dictionary and add important data
             checkpoint = {
                 'epoch': epoch + 1,
                 'validation_min_loss': validation_loss,
@@ -140,14 +131,13 @@ class Optimization:
                 'optimizer': optimizer.state_dict(),
             }
 
-            print(
-                f"[{epoch}/{n_epochs}] Training loss: {train_step_loss:.4f}\t Validation loss: {validation_loss:.4f}"
-            )
+            print(f"[{epoch}/{n_epochs}] Training loss: {train_step_loss:.4f}"+
+                "\t Validation loss: {validation_loss:.4f}")
             print("accuracy: {:0.2f}%,".format(accuracy * 100), "f1_score: {:0.2f}%".format(f1_score_macro * 100))
+
             # save checkpoint
             check_path = Path('checkpoint.pt')
             best_check_path = Path('best_checkpoint.pt')
-
             save_ckp(checkpoint, False, check_path, best_check_path)
 
             if f1_score_macro > f1_max:
@@ -163,21 +153,17 @@ class Optimization:
             print("\n")
 
     def plot_losses(self):
-        #plt.figure(figsize=(10, 10))
         plt.title("LSTM Training and Validation Loss")
         plt.plot(self.train_loss, label="Training loss")
         plt.plot(self.val_loss, label="Validation loss")
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
-        #plt.margins(1, 1)
         plt.legend()
-        #plt.title("LSTM Losses")
         plt.show()
         plt.savefig("LSTM_class_losses.png")
         plt.close()
 
     def evaluate(self, test_loader, best_model, bin_class_task=True):
-
         best_model.eval()
         with torch.no_grad():
             predictions = []
@@ -187,7 +173,6 @@ class Optimization:
                 X_test = test_batch_info[0]
                 y_test = test_batch_info[1] # actual values
                 X_test_original_len = test_batch_info[2]
-
                 X_test_packed = pack(X_test.float(), X_test_original_len, batch_first=True)
 
                 y_pred = best_model(X_test_packed, X_test_original_len)
@@ -200,6 +185,7 @@ class Optimization:
 
                 y_test = y_test.detach().numpy()
                 values.append(y_test)
+                
         if bin_class_task:
             values = np.concatenate(values).ravel()
             predictions = np.concatenate(predictions).ravel()
