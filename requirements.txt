@@ -1,11 +1,11 @@
 matplotlib==3.4.2
-numpy==1.20.3
+numpy
 scikit_learn==1.1.1
 scipy==1.8.1
 opencv_python==4.5.2.54
 scikit-image==0.17.2
 pandas==1.0.3
-PyYAML==5.3.1
+PyYAML
 torch==1.12.0
 torchvision==0.13.0
 imbalanced-learn==0.9.1
