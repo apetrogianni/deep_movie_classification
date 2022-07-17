@@ -18,14 +18,14 @@ print_class_map = True
 def my_collate(batch):
     """
     Different padding in each batch depending on
-    the longest sequence in the batch
-    batch: list of tuples (data, label)
-    """
+    the longest sequence in the batch.
 
-    # batch's elements in descending order
+        Parameters
+            batch: list of tuples (data, label)
+    """
+    # sort batch's elements in descending order
     sorted_batch = sorted(batch, key=lambda x: x[0].shape[0], reverse=True)
     sequences = [x[0] for x in sorted_batch]
-
     sequences_padded = pad(sequences, batch_first=True)
 
     # store the original length of each sequence
@@ -40,18 +40,20 @@ def my_collate(batch):
 
 
 def data_preparation(videos_dataset, batch_size):
+    # Create train, validation and test DataLoaders
     X = [x[0] for x in videos_dataset]
     y = [x[1] for x in videos_dataset]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                        test_size=0.20, stratify=y)
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
-                                                      test_size=0.12, stratify=y_train)
+    X_train, X_test, y_train, y_test = \
+        train_test_split(X, y, test_size=0.20, stratify=y)
+    X_train, X_val, y_train, y_val = \
+        train_test_split(X_train, y_train, test_size=0.12, stratify=y_train)
 
     # Define Scaler
     scaler = TimeSeriesStandardScaling()
 
-    X_train, y_train, train_lengths = load_data(X_train, y_train, True, scaler=scaler)
+    X_train, y_train, train_lengths = \
+        load_data(X_train, y_train, True, scaler=scaler)
     train_dataset = LSTMDataset(X_train, y_train, train_lengths)
 
     X_val, y_val, val_lengths = load_data(X_val, y_val, False, scaler=scaler)
@@ -61,23 +63,24 @@ def data_preparation(videos_dataset, batch_size):
     test_dataset = LSTMDataset(X_test, y_test, test_lengths)
 
     # Define a DataLoader for each set
-    train_loader = DataLoader(train_dataset, batch_size=batch_size,
-                              collate_fn=my_collate, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                               collate_fn=my_collate, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size,
-                              collate_fn=my_collate, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,\
+        collate_fn=my_collate, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size,\
+        collate_fn=my_collate, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size,\
+        collate_fn=my_collate, shuffle=True)
 
     return train_loader, val_loader, test_loader
 
 
 def create_dataset(videos_path):
     """
-    param: videos_path: a list of the paths of the folders
-    that contain the movie shots.
-    return: a list of tuples. In each tuple,
-    the first element is the video's full_path_name
-    and the second one is the corresponding y label.
+        Parameters:
+            videos_path: a list of the full path class-folders
+        Returns: 
+            a list of tuples. In each tuple, the first element 
+            is the video's full_path_name and the second one 
+            is the corresponding y label.
     """
     global print_class_map
 
@@ -90,7 +93,6 @@ def create_dataset(videos_path):
 
         if print_class_map:
             print(f" \'{label}\': {label_int}")
-
         for filename in os.listdir(folder):
             if filename.endswith(".mp4.npy"):
                 full_path_name = folder + "/" + filename
