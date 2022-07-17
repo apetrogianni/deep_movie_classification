@@ -84,6 +84,7 @@ def create_dataset(videos_path):
     """
     global print_class_map
 
+    class_mapping = {}
     videos_dataset = []
     label_int = -1
     for folder in videos_path:
@@ -92,12 +93,13 @@ def create_dataset(videos_path):
         label_int += 1
 
         if print_class_map:
-            print(f" \'{label}\': {label_int}")
+            class_mapping[label] = label_int
+            # print(f" \'{label}\': {label_int}")
         for filename in os.listdir(folder):
             if filename.endswith(".mp4.npy"):
                 full_path_name = folder + "/" + filename
                 videos_dataset.append(tuple((full_path_name, label_int)))
 
     print_class_map = False
-
-    return videos_dataset
+    print(class_mapping)
+    return videos_dataset, class_mapping
