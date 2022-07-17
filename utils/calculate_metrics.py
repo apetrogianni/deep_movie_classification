@@ -21,7 +21,6 @@ def plot_roc_curve(fpr, tpr, roc_auc):
     plt.ylim([0, 1.05])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    #plt.show()
     plt.savefig("ROCurve_binary.png")
     plt.close()
 
@@ -33,13 +32,13 @@ def plot_precision_recall_curve(precision, recall, y_test):
     pyplot.xlabel('Recall')
     pyplot.ylabel('Precision')
     pyplot.legend()
-    #pyplot.show()
     plt.savefig("Precision_Recall_Curve_binary.png")
     plt.close()
 
 
 def calculate_bin_metrics(predicted_values, actual_values, threshold=0.0):
-
+    # Calculate accuracy, precision, recall, f1_score for
+    # the binary classification task
     y_pred = predicted_values >= threshold
     y = actual_values
     y_pred = y_pred.float()
@@ -47,13 +46,16 @@ def calculate_bin_metrics(predicted_values, actual_values, threshold=0.0):
     cm = confusion_matrix(y, y_pred)
     f1_score_macro = f1_score(y, y_pred, average='macro')
     acc = accuracy_score(y, y_pred)
-    precision_recall_fscore = precision_recall_fscore_support(y, y_pred, average='macro')
+    precision_recall_fscore = \
+        precision_recall_fscore_support(y, y_pred, average='macro')
 
     return acc, f1_score_macro, cm, precision_recall_fscore
     
 
-def calculate_bin_aggregated_metrics(predicted_values, actual_values, class_labels, threshold=0.0):
-
+def calculate_bin_aggregated_metrics(predicted_values, actual_values, \
+                                     class_labels, threshold=0.0):
+    # Calculate the aggregated metrics for the binary 
+    # classification task
     y_pred = predicted_values >= threshold
     y = actual_values
 
@@ -62,11 +64,13 @@ def calculate_bin_aggregated_metrics(predicted_values, actual_values, class_labe
     cm = confusion_matrix(y, y_pred, labels=class_labels)
     f1_score_macro = f1_score(y, y_pred, average='macro')
     acc = accuracy_score(y, y_pred)
-    precision_recall_fscore = precision_recall_fscore_support(y, y_pred, average='macro')
+    precision_recall_fscore = \
+        precision_recall_fscore_support(y, y_pred, average='macro')
 
     # ROC Curve
     fpr, tpr, threshold = metrics.roc_curve(actual_values, predicted_values)
-    precision, recall, thresholds = metrics.precision_recall_curve(actual_values, predicted_values)
+    precision, recall, thresholds = \
+        metrics.precision_recall_curve(actual_values, predicted_values)
     roc_auc = metrics.auc(fpr, tpr)
 
     plot_roc_curve(fpr, tpr, roc_auc)
@@ -78,9 +82,11 @@ def calculate_bin_aggregated_metrics(predicted_values, actual_values, class_labe
 def plot_bin_confusion_matrix(name, cm, classes):
     """
     Plot confusion matrix
-    :name: name of classifier
-    :cm: estimates of confusion matrix
-    :classes: all the classes
+        
+        Parameters:
+            name: name of the classifier
+            cm: estimates of confusion matrix
+            classes: all the classes
     """
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
@@ -100,7 +106,6 @@ def plot_bin_confusion_matrix(name, cm, classes):
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-
     plt.savefig(str(name) + '_binary_cm' + '.eps', format='eps')
 
 
@@ -114,7 +119,8 @@ def calculate_metrics(y_pred, y_test, id=0):
     cm = confusion_matrix(y_test, y_pred)
     f1_score_macro = f1_score(y_test, y_pred, average='macro')
     acc = accuracy_score(y_test, y_pred)
-    precision_recall_fscore = precision_recall_fscore_support(y_test, y_pred, average='macro')
+    precision_recall_fscore = \
+        precision_recall_fscore_support(y_test, y_pred, average='macro')
 
     return acc, f1_score_macro, cm, precision_recall_fscore
 
@@ -130,17 +136,18 @@ def calculate_aggregated_metrics(y_pred, y_test, class_labels):
     conf_mat = confusion_matrix(y_test, y_pred)
     f1_score_macro = f1_score(y_test, y_pred, average='macro')
     acc = accuracy_score(y_test, y_pred)
-    #precision_recall_fscore = precision_recall_fscore_support(y_test, y_pred, average='macro')
 
-    return acc, f1_score_macro, conf_mat, class_labels #, precision_recall_fscore
+    return acc, f1_score_macro, conf_mat, class_labels 
 
 
 def plot_confusion_matrix(name, cm, videos_path, classes):
     """
     Plot confusion matrix
-    :name: name of classifier
-    :cm: estimates of confusion matrix
-    :classes: all the classes
+
+        Parameters:
+            name: name of the classifier
+            cm: estimates of confusion matrix
+            classes: all the classes
     """
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
@@ -160,38 +167,32 @@ def plot_confusion_matrix(name, cm, videos_path, classes):
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-
     plt.savefig(str(len(videos_path)) + '_shot_classifier_conf_mat_' + str(name) + '.eps', format='eps')
-
-
 
 
 def save_ckp(checkpoint, is_best_val, checkpoint_path, best_model_path):
     """
-    state: checkpoint we want to save
-    is_best: is this the best checkpoint; min validation loss
+    Saves the checkpoint and checks if it is the best one.
     """
-
-    # save checkpoint data
     torch.save(checkpoint, checkpoint_path)
 
     # if it is the best model
+    # copy that checkpoint file to best path
     if is_best_val:
         best_check_path = best_model_path
-
-        # copy that checkpoint file to best path
         shutil.copyfile(checkpoint_path, best_check_path)
 
 
 def load_ckp(checkpoint_path, model, optimizer):
     """
-    checkpoint_path: path to save checkpoint
-    model: model that we want to load checkpoint parameters into
-    optimizer: optimizer we defined in previous training
+    Loads a checkpoint.
+        Parameters:
+            checkpoint_path: path to save checkpoint
+            model: model that we want to load checkpoint parameters into
+            optimizer: optimizer we defined in previous training
     """
 
     checkpoint = torch.load(checkpoint_path)
-
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     validation_min_loss = checkpoint['validation_min_loss']
