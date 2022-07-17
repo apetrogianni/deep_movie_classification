@@ -1,3 +1,7 @@
+"""
+Create both a StandardScaler and a MinMaxScaler
+to normalize the data column-wise (for each feature).
+"""
 import torch
 import numpy as np
 import matplotlib
@@ -17,7 +21,6 @@ class TimeSeriesStandardScaling():
             mean_std_tuples.append(
                 tuple((np.mean(temp), np.std(temp))))
             k += 1
-
         self.scale_params = mean_std_tuples
 
     def transform(self, X):
