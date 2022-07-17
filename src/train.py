@@ -9,6 +9,7 @@ python3 train.py -v ../3_class/Static ../3_class/Zoom ../3_class/Vertical_and_ho
 
 python3 train.py -v /media/antonia/Seagate/datasets/Hand_Crafted_dataset/2_class/Non_Static /media/antonia/Seagate/datasets/Hand_Crafted_dataset/2_class/Static
 """
+from copyreg import pickle
 from operator import mod
 import os
 import sys
@@ -21,6 +22,7 @@ import itertools
 import argparse
 import numpy as np
 import torch.nn as nn
+from pickle import dump, dumps
 from pathlib import Path
 from scipy import ndimage
 from torch.nn import init
@@ -96,6 +98,60 @@ def weight_init(m):
                 param.data.fill_(0)
 
 
+def LSTM_train(dataset, batch_size, input_size,\
+    hidden_size, num_layers, output_size,
+    dropout, learning_rate, weight_decay,
+    choose_model, criterion, bin_class_task=True):
+    
+    train_loader, val_loader, test_loader = \
+                data_preparation(dataset, batch_size)
+            
+    # LSTM params
+    model_params = {'input_size': input_size,
+                    'hidden_size': hidden_size,
+                    'num_layers': num_layers,
+                    'output_size': output_size,
+                    'dropout_prob': dropout}
+    
+    model = get_model(choose_model, model_params)
+    
+    optimizer = optim.Adam(model.parameters(),\
+        lr=learning_rate, weight_decay=weight_decay)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
+        'min', verbose=True)
+
+    model_info["criterion"] = criterion
+    model_info["optimizer"] = optimizer
+    model_info["batch_size"] = batch_size
+    model_info["scheduler"] = scheduler
+    model_info["model_params"] = model_params
+    model_info["model"] = model
+    
+    #initialize weights for both LSTM and Sequential
+    model.lstm.apply(weight_init)
+    for submodule in model.fnn:
+        submodule.apply(weight_init)
+    
+    # LSTM training
+    opt = Optimization(model=model, loss_fn=criterion, \
+        optimizer=optimizer, scheduler=scheduler)
+    opt.train(train_loader, val_loader, n_epochs=n_epochs,\
+        bin_class_task=bin_class_task, scheduler=scheduler, 
+        optimizer=optimizer, model=model)
+
+    ckp_path = "best_checkpoint.pt"
+    best_model, optimizer, start_epoch, best_f1_score = \
+        load_ckp(ckp_path, model, optimizer)
+
+    predictions, values, multi_confusion_matrix = \
+        opt.evaluate(test_loader, best_model, bin_class_task)
+
+    preds.append(predictions)
+    vals.append(values)
+
+    return model_info, preds, vals
+
+
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')
     args = parse_arguments()
@@ -107,204 +163,140 @@ if __name__ == "__main__":
 
     preds = []
     vals = []
-
+    model_info = {}
     num_of_shots_per_class = {}
 
+    # extract features from .mp4 files 
     feature_extraction(videos_path)
 
-    # for folder in videos_path:
-    #     """
-    #     For each class-folder get the numbrt of npy files 
-    #     (.npy files contain the extracted features).
-    #     """
-    #     class_name = os.path.basename(folder)
-    #     np_feature_files = fnmatch.filter(os.listdir(folder), '*mp4.npy')
-    #     num_of_shots_per_class[class_name] = len(np_feature_files)
+    for folder in videos_path:
+        """
+        For each class-folder get the number of .npy files 
+        (.npy files contain the extracted features).
+        """
+        class_name = os.path.basename(folder)
+        np_feature_files = fnmatch.filter(os.listdir(folder), '*mp4.npy')
+        num_of_shots_per_class[class_name] = len(np_feature_files)
+
+    print("\nNumber of movie-shots per class: ", \
+                num_of_shots_per_class)
     
-    # if len(videos_path) < 2:
-    #     raise TypeError("You must enter 2 video-folders at least!")
-    # if len(videos_path) == 2:
-    #     print("\n============== BINARY CLASSIFICATION ==============")
-    #     for i in range(0, num_of_folds):
-    #         n_epochs = 1
-    #         output_size = 1
-    #         input_size = 43  # num of features
-    #         hidden_size = 100
-    #         num_layers = 2
-    #         batch_size = 70
-    #         dropout = 0.4
-    #         learning_rate = 1e-3
-    #         weight_decay = 1e-5
+    if len(videos_path) < 2:
+        raise TypeError("You must enter at least 2 video-folders as an input!")
+    if len(videos_path) == 2:
+        print("\n============== BINARY CLASSIFICATION ==============")
+        for i in range(0, num_of_folds):
+            print(f"---- Fold {i+1}/{num_of_folds} ----")
+            # create LSTM dataset & DataLoaders
+            dataset = create_dataset(videos_path)
+
+            n_epochs = 100
+            input_size = 43
+            num_layers = 1
+            batch_size = 70
+            hidden_size = 100
+            dropout = 0.5
+            lr = 1e-3
+            weight_decay = 1e-5
+            output_size = 1
+
+            criterion = nn.BCEWithLogitsLoss()
+
+            model_info, preds, vals = LSTM_train(dataset=dataset,batch_size=batch_size,\
+                input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
+                output_size=output_size, dropout=dropout, learning_rate=lr, 
+                weight_decay=weight_decay, choose_model='bin_lstm',
+                criterion=criterion, bin_class_task=True)  
+
+            # Save Loss Function, optimizer, scheduler,
+            # batch_size, model_params and the model in a .pkl file
+            with open('binary_best_model.pkl', 'wb') as f:
+                dump(model_info, f)
+
+
+        preds = torch.Tensor(np.concatenate(preds).ravel())
+        vals = np.concatenate(vals).ravel()
+        class_labels = list(set(vals))
+        vals = torch.Tensor(vals)
+
+        np.save("LSTM_binary_y_test.npy", vals)
+        np.save("LSTM_binary_y_pred.npy", preds)
+
+        accuracy, f1_score_macro, cm, class_labels, precision_recall = \
+            calculate_bin_aggregated_metrics(preds, vals.float(), class_labels)
+
+        print(f"{num_of_folds}-fold Classification Report:\n"
+            "accuracy: {:0.2f}%,".format(accuracy * 100),
+            "precision: {:0.2f}%,".format(precision_recall[0] * 100),
+            "recall: {:0.2f}%,".format(precision_recall[1] * 100),
+            "f1_score (macro): {:0.2f}%".format(f1_score_macro * 100))
+        print("\nConfusion matrix\n", cm)
+
+        np.set_printoptions(precision=2)
+        plot_bin_confusion_matrix('LSTM', cm, classes=class_labels)
+        print("==============-----------------------==============")
+    else: 
+        print("\n======= MULTI-LABEL CLASSIFICATION =======")
+        num_of_shots_per_class_list = list(num_of_shots_per_class.values()) 
+        major_class = max(num_of_shots_per_class_list)
+        weights = []
+        # minor_class = min(num_of_shots_per_class_list)
+        # for class_folder_shots in num_of_shots_per_class_list:
+        #     weight_class = minor_class / class_folder_shots
+        #     weights.append(weight_class)
+
+        for class_folder_shots in num_of_shots_per_class_list:
+            weight_class = major_class / class_folder_shots
+            weights.append(weight_class)
+
+        weights = torch.FloatTensor(weights)
+
+        for i in range(0, num_of_folds):
+            print(f"---- Fold {i+1}/{num_of_folds} ----")
+            # create LSTM dataset & DataLoaders
+            dataset = create_dataset(videos_path)
+
+            n_epochs = 100
+            input_size = 43 
+            num_layers = 1
+            batch_size = 32
+            hidden_size = 64
+            dropout = 0.1
+            lr = 1e-2
+            weight_decay = 1e-8
+            output_size = len(videos_path)
+
+            criterion = nn.CrossEntropyLoss(weight=weights)
+
+            model_info, preds, vals = LSTM_train(dataset=dataset,batch_size=batch_size,\
+                input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
+                output_size=output_size, dropout=dropout, learning_rate=lr, 
+                weight_decay=weight_decay, choose_model='multi_lstm',
+                criterion=criterion, bin_class_task=False)  
+
+            # Save Loss Function, optimizer, scheduler,
+            # batch_size, model_params and the model in a .pkl file
+            with open(str(len(videos_path))+'_class_best_model.pkl', 'wb') as f:
+                dump(model_info, f)
             
-    #         print("\nNumber of movie-shots per class: ", num_of_shots_per_class)
+        vals = np.concatenate(vals).ravel()
+        preds = torch.Tensor(np.concatenate(preds))
+        class_labels = list(set(vals))
+        vals = torch.Tensor(vals)
 
-    #         # create LSTM dataset & DataLoaders
-    #         dataset = create_dataset(videos_path)
-    #         train_loader, val_loader, test_loader = \
-    #             data_preparation(dataset, batch_size=batch_size)
-            
-    #         print(f"---- Fold {i+1}/{num_of_folds} ----")
-            
-    #         # LSTM params 
-    #         model_params = {'input_size': input_size,
-    #                         'hidden_size': hidden_size,
-    #                         'num_layers': num_layers,
-    #                         'output_size': output_size,
-    #                         'dropout_prob': dropout}
-    #         model = get_model('bin_lstm', model_params)
+        np.save("LSTM_" + str(len(videos_path)) + "_class_y_test.npy", vals)
+        np.save("LSTM_" + str(len(videos_path)) + "_class_y_pred.npy", preds)
 
-    #         criterion = nn.BCEWithLogitsLoss()
-    #         optimizer = optim.Adam(model.parameters(),\
-    #             lr=learning_rate, weight_decay=weight_decay)
-    #         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, \
-    #             'min', verbose=True)
+        accuracy, f1_score_macro, cm, class_labels = \
+            calculate_aggregated_metrics(preds, vals, class_labels)
 
-    #         # TODO: save them DO NOT print them !
-    #         # print(f"{model_params}" +\
-    #         #     f"\nbatch_size: {batch_size}" +\
-    #         #     f"\nLoss function: {criterion}" +\
-    #         #     f"\nOptimizer: {optimizer}" +\
-    #         #     f"\n{model}")
+        print(f"{num_of_folds}-fold Classification Report:\n"
+            "accuracy: {:0.2f}%,".format(accuracy * 100),
+            # "precision: {:0.2f}%,".format(precision_recall[0] * 100),
+            # "recall: {:0.2f}%,".format(precision_recall[1] * 100),
+            "f1_score (macro): {:0.2f}%".format(f1_score_macro * 100))
+        print("\nConfusion matrix\n", cm)
 
-    #         # initialize weights for both LSTM and Sequential
-    #         model.lstm.apply(weight_init)
-    #         for submodule in model.fnn:
-    #             submodule.apply(weight_init)
-
-    #         # LSTM training
-    #         opt = Optimization(model=model, loss_fn=criterion,\
-    #             optimizer=optimizer, scheduler=scheduler)
-    #         opt.train(train_loader, val_loader, n_epochs=n_epochs,bin_class_task=True,
-    #         scheduler=scheduler, optimizer=optimizer, model=model)
-    #         # opt.plot_losses()
-
-    #         # Evaluation
-    #         ckp_path = "best_checkpoint.pt"
-    #         best_model, optimizer, start_epoch, best_f1_score = \
-    #             load_ckp(ckp_path, model, optimizer)
-
-    #         predictions, values, binary_confusion_matrix = \
-    #             opt.evaluate(test_loader, best_model,bin_class_task=True)
-
-    #         preds.append(predictions)
-    #         vals.append(values)
-
-    #     preds = torch.Tensor(np.concatenate(preds).ravel())
-    #     vals = np.concatenate(vals).ravel()
-    #     class_labels = list(set(vals))
-    #     vals = torch.Tensor(vals)
-
-    #     np.save("LSTM_binary_y_test.npy", vals)
-    #     np.save("LSTM_binary_y_pred.npy", preds)
-
-    #     accuracy, f1_score_macro, cm, class_labels, precision_recall = \
-    #         calculate_bin_aggregated_metrics(preds, vals.float(), class_labels)
-
-    #     print(f"{num_of_folds}-fold Classification Report:\n"
-    #         "accuracy: {:0.2f}%,".format(accuracy * 100),
-    #         "precision: {:0.2f}%,".format(precision_recall[0] * 100),
-    #         "recall: {:0.2f}%,".format(precision_recall[1] * 100),
-    #         "f1_score (macro): {:0.2f}%".format(f1_score_macro * 100))
-    #     print("\nConfusion matrix\n", cm)
-
-    #     np.set_printoptions(precision=2)
-    #     plot_bin_confusion_matrix('LSTM', cm, classes=class_labels)
-    #     print("==============-----------------------==============")
-    # else: 
-    #     print("\n======= MULTI-LABEL CLASSIFICATION =======")
-
-    #     print("\nNumber of movie-shots per class: ", num_of_shots_per_class)
-
-    #     minor_class = min(num_of_shots_per_class)
-    #     major_class = max(num_of_shots_per_class)
-
-    #     weights = []
-    #     # for class_folder_shots in num_of_shots_per_class:
-    #     #     weight_class = minor_class / class_folder_shots
-    #     #     weights.append(weight_class)
-
-    #     for class_folder_shots in num_of_shots_per_class:
-    #         weight_class = major_class / class_folder_shots
-    #         weights.append(weight_class)
-
-    #     weights = torch.FloatTensor(weights)
-
-    #     for i in range(0, num_of_folds):
-    #         n_epochs = 2
-    #         input_size = 43
-    #         num_layers = 1
-    #         batch_size = 32
-    #         hidden_size = 64
-    #         dropout = 0.1
-    #         learning_rate = 1e-2
-    #         weight_decay = 1e-8
-    #         output_size = len(videos_path)
-
-    #         # create LSTM dataset & DataLoaders
-    #         dataset = create_dataset(videos_path)
-    #         train_loader, val_loader, test_loader = data_preparation(
-    #             dataset, batch_size=batch_size)
-
-    #         print(f"---- Fold {i+1}/{num_of_folds} ----")
-    #         # LSTM params
-    #         model_params = {'input_size': input_size,
-    #                         'hidden_size': hidden_size,
-    #                         'num_layers': num_layers,
-    #                         'output_size': output_size,
-    #                         'dropout_prob': dropout}
-            
-    #         model = get_model('multi_lstm', model_params)
-
-    #         # TODO: save them DO NOT print them
-    #         # print(f"{model_params}" +\
-    #         #     f"\nbatch_size: {batch_size}" +\
-    #         #     f"\nLoss function: {criterion}" +\
-    #         #     f"\nOptimizer: {optimizer}" +\
-    #         #     f"\n{model}")
-    #         criterion = nn.CrossEntropyLoss(weight=weights)
-    #         optimizer = optim.Adam(model.parameters(),
-    #                             lr=learning_rate, weight_decay=weight_decay)
-    #         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
-            
-    #         #initialize weights for both LSTM and Sequential
-    #         model.lstm.apply(weight_init)
-    #         for submodule in model.fnn:
-    #             submodule.apply(weight_init)
-            
-    #         opt = Optimization(model=model, loss_fn=criterion, optimizer=optimizer, scheduler=scheduler)
-
-    #         opt.train(train_loader, val_loader, n_epochs=n_epochs, bin_class_task=False)
-    #         # opt.plot_losses()
-
-    #         ckp_path = "best_checkpoint.pt"
-    #         best_model, optimizer, start_epoch, best_f1_score = \
-    #             load_ckp(ckp_path, model, optimizer)
-
-    #         predictions, values, multi_confusion_matrix = \
-    #             opt.evaluate(test_loader, best_model,bin_class_task=False)
-
-    #         preds.append(predictions)
-    #         vals.append(values)
-
-
-    #     vals = np.concatenate(vals).ravel()
-    #     preds = torch.Tensor(np.concatenate(preds))
-    #     class_labels = list(set(vals))
-    #     vals = torch.Tensor(vals)
-
-    #     np.save("LSTM_" + str(len(videos_path)) + "_class_y_test.npy", vals)
-    #     np.save("LSTM_" + str(len(videos_path)) + "_class_y_pred.npy", preds)
-
-    #     accuracy, f1_score_macro, cm, class_labels = \
-    #         calculate_aggregated_metrics(preds, vals, class_labels)
-
-    #     print(f"{num_of_folds}-fold Classification Report:\n"
-    #         "accuracy: {:0.2f}%,".format(accuracy * 100),
-    #         # "precision: {:0.2f}%,".format(precision_recall[0] * 100),
-    #         # "recall: {:0.2f}%,".format(precision_recall[1] * 100),
-    #         "f1_score (macro): {:0.2f}%".format(f1_score_macro * 100))
-    #     print("\nConfusion matrix\n", cm)
-
-    #     np.set_printoptions(precision=2)
-    #     plot_confusion_matrix('LSTM', cm, videos_path=videos_path, classes=class_labels)
-    #     print("=======----------------------------=======")
+        np.set_printoptions(precision=2)
+        plot_confusion_matrix('LSTM', cm, videos_path=videos_path, classes=class_labels)
+        print("=======----------------------------=======")
