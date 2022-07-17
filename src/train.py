@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
             # Select parameters for each experiment
             if len(videos_path) == 3:
-                n_epochs = 1
+                n_epochs = 100
                 input_size = 43 
                 num_layers = 1
                 batch_size = 32
