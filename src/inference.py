@@ -54,15 +54,13 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def predict_labels(movie, num_of_labels, model_path):
+def predict_labels(movie, num_of_labels, model_path, model_info):
     X_test = movie
     bin_class_task = False
     if num_of_labels == 2:
-        
         bin_class_task = True
-
-    # TODO: check class !
-    with open("binary_best_model.pkl", "rb") as f:
+    
+    with open(model_info, "rb") as f:
         load_model = pickle.load(f)
 
     scaler=load_model['scaler']
@@ -115,31 +113,42 @@ if __name__ == '__main__':
     trained_model = args.model
     regex = re.compile(r'\d+')
     num_of_labels = regex.search(trained_model).group(0)
-    num_of_labels = int(num_of_labels)
+    
     
     # get model's path
     model_path = os.path.abspath(trained_model)
     model_path = os.path.dirname(model_path)
     
-    feature_extraction(videos_path)
+    # feature_extraction(videos_path)
     videos_path = videos_path[-1]
 
     print("\n====================== INFERENCE ======================\n")
+    pkl_files = []
+    pkl_path = os.path.dirname(os.path.abspath(__file__))
+    for filename in os.listdir(pkl_path):
+            if filename.endswith("_model.pkl"):
+                print(filename)
+                pkl_files.append(filename)
 
+    for pkl_file in pkl_files:
+        if num_of_labels in pkl_file:
+            model_info = pkl_file
+
+    num_of_labels = int(num_of_labels)
     # TODO: class_mapping to fix the output!
     if os.path.isdir(videos_path):
         for filename in os.listdir(videos_path):
             if filename.endswith(".mp4.npy"):
                 filename = videos_path + "/" + filename
                 y_pred, class_mapping = \
-                    predict_labels(filename, num_of_labels, trained_model)
+                    predict_labels(filename, num_of_labels, trained_model, model_info)
                 y_pred_dict[filename] = int(y_pred.item())
         y_pred_dict['class_mapping'] = class_mapping
 
     elif os.path.isfile(videos_path):
         filename = videos_path + ".npy"
         y_pred, class_mapping = \
-            predict_labels(filename, num_of_labels, trained_model)
+            predict_labels(filename, num_of_labels, trained_model, model_info)
         y_pred_dict[filename] = int(y_pred.item())
         y_pred_dict['class_mapping'] = class_mapping
     
