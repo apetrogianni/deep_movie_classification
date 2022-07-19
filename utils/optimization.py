@@ -201,12 +201,12 @@ class Optimization:
             accuracy, f1_score_macro, cm, precision_recall = calculate_bin_metrics(predictions_tensor, values_tensor.float())
         else: 
             if inference:
-                predictions = np.concatenate(predictions).ravel()
+                predictions = np.concatenate(predictions)
                 predictions_tensor = (torch.Tensor(predictions))
                 return predictions_tensor
             values = np.concatenate(values).ravel()
             predictions = np.concatenate(predictions)
-
+            
             values_tensor = (torch.Tensor(values))
             predictions_tensor = (torch.Tensor(predictions))
 
