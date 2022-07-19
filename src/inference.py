@@ -5,8 +5,8 @@
         python3 inference.py -i <input> -m /pretrained_models/2_class/2_class_best_checkpoint.pt
 
         ,where <input> is the full path of an .mp4 file 
-        or a folder of .mp4 files and </pretrained_models/2_class/2_class_best_checkpoint.pt>
-        is the full path of the model to use for the prediction.
+        or a folder of .mp4 files, and </pretrained_models/2_class/2_class_best_checkpoint.pt>
+        is the full path of the model (in "pretrained_models" folder) to load for the prediction.
 
     Returns:
         a dictionary of the movie-shots and the corresponding predicted label.
@@ -64,19 +64,18 @@ def predict_labels(movie, num_of_labels, model_path, model_info):
         load_model = pickle.load(f)
 
     scaler=load_model['scaler']
-    
-    X_test, y_test, test_lengths = load_data(X_test, 0, False, \
-        scaler=scaler, inference=True)
-
-    test_dataset = LSTMDataset(X_test, y_test, test_lengths)
-    test_loader = DataLoader(test_dataset, batch_size=1, \
-        collate_fn=my_collate, shuffle=True)
-    
     criterion = load_model['criterion']
     model = load_model['model']
     class_mapping = load_model['class_mapping']
     optimizer = load_model['optimizer']
     scheduler = load_model['scheduler']
+    
+    # preprocessing
+    X_test, y_test, test_lengths = load_data(X_test, 0, False, \
+        scaler=scaler, inference=True)
+    test_dataset = LSTMDataset(X_test, y_test, test_lengths)
+    test_loader = DataLoader(test_dataset, batch_size=1, \
+        collate_fn=my_collate, shuffle=True)
 
     opt = Optimization(model=model, loss_fn=criterion, \
         optimizer=optimizer, scheduler=scheduler)
@@ -84,7 +83,8 @@ def predict_labels(movie, num_of_labels, model_path, model_info):
     best_model, optimizer, _, _ = \
         load_ckp(model_path, model, optimizer)
 
-    predictions  = opt.evaluate(test_loader, best_model, \
+    # predict the label
+    predictions = opt.evaluate(test_loader, best_model, \
         bin_class_task, inference=True)
 
     if num_of_labels == 2:
@@ -93,7 +93,7 @@ def predict_labels(movie, num_of_labels, model_path, model_info):
         y_pred = y_pred.float() 
     else:
         # multi-label task
-        y_pred_softmax = torch.log_softmax(y_pred, dim=1)
+        y_pred_softmax = torch.log_softmax(predictions, dim=1)
         _, y_pred_tags = torch.max(y_pred_softmax, dim=1)
         y_pred = y_pred_tags.float()
     
@@ -114,7 +114,6 @@ if __name__ == '__main__':
     regex = re.compile(r'\d+')
     num_of_labels = regex.search(trained_model).group(0)
     
-    
     # get model's path
     model_path = os.path.abspath(trained_model)
     model_path = os.path.dirname(model_path)
@@ -127,7 +126,6 @@ if __name__ == '__main__':
     pkl_path = os.path.dirname(os.path.abspath(__file__))
     for filename in os.listdir(pkl_path):
             if filename.endswith("_model.pkl"):
-                print(filename)
                 pkl_files.append(filename)
 
     for pkl_file in pkl_files:
