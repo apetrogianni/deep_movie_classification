@@ -69,8 +69,8 @@ def data_preparation(videos_dataset, batch_size):
         collate_fn=my_collate, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size,\
         collate_fn=my_collate, shuffle=True)
-
-    return train_loader, val_loader, test_loader
+        
+    return train_loader, val_loader, test_loader, scaler
 
 
 def create_dataset(videos_path):
