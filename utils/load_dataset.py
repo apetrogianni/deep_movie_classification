@@ -23,38 +23,61 @@ class LSTMDataset(Dataset):
         return self.X[index], self.y[index], self.lengths[index]
 
 
-def load_data(X, y, check_train, scaler):
+def load_data(X_in, y, check_train, scaler, inference=False):
     # for train/val/test sets
-    split_dataset = []
-    for i, j in zip(X, y):
-        split_dataset.append(tuple((i, j)))
 
-    x_len = []
-    X = []
-    labels = []
-
-    for index, data in enumerate(split_dataset):
-        """
-        data[0] corresponds to--->.npy movie-shot names
-        data[1] corresponds to--->y labels
-        """
-        X_to_tensor = np.load(data[0])
-
+    if inference:
+        X_to_tensor = np.load(X_in)
+        
+        x_len = []
+        X = []
+        label = []
+        
         # keep only specific features
         # (remove histograms)
         X_to_tensor = X_to_tensor[:, 45:89]
         X_to_tensor = np.array([ndimage.median_filter(s, 4)
                                 for s in X_to_tensor.T]).T
 
-        y = data[1]
-        labels.append(y)
+        label = [-1]
         x_len.append(X_to_tensor.shape[0])
         X.append(torch.Tensor(X_to_tensor))
 
-    # data normalization
-    if check_train:
-        X_scaled = scaler.fit_transform(X)
-    else:
         X_scaled = scaler.transform(X)
+
+        return X_scaled, label, x_len
+    else:
+        split_dataset = []
+        for i, j in zip(X_in, y):
+            split_dataset.append(tuple((i, j)))
+
+        x_len = []
+        X = []
+        labels = []
+        
+        for index, data in enumerate(split_dataset):
+            # print(split_dataset)
+            """
+            data[0] corresponds to--->.npy movie-shot names
+            data[1] corresponds to--->y labels
+            """
+            X_to_tensor = np.load(data[0])
+
+            # keep only specific features
+            # (remove histograms)
+            X_to_tensor = X_to_tensor[:, 45:89]
+            X_to_tensor = np.array([ndimage.median_filter(s, 4)
+                                    for s in X_to_tensor.T]).T
+
+            y = data[1]
+            labels.append(y)
+            x_len.append(X_to_tensor.shape[0])
+            X.append(torch.Tensor(X_to_tensor))
+
+        # data normalization
+        if check_train:
+            X_scaled = scaler.fit_transform(X)
+        else:
+            X_scaled = scaler.transform(X)
 
     return X_scaled, labels, x_len
