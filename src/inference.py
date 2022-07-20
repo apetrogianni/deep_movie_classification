@@ -113,7 +113,7 @@ if __name__ == '__main__':
     trained_model = args.model
     regex = re.compile(r'\d+')
     num_of_labels = regex.search(trained_model).group(0)
-    
+
     # get model's path
     model_path = os.path.abspath(trained_model)
     model_path = os.path.dirname(model_path)
@@ -141,13 +141,17 @@ if __name__ == '__main__':
                 y_pred, class_mapping = \
                     predict_labels(filename, num_of_labels, trained_model, model_info)
                 y_pred_dict[filename] = int(y_pred.item())
-        y_pred_dict['class_mapping'] = class_mapping
 
     elif os.path.isfile(videos_path):
         filename = videos_path + ".npy"
         y_pred, class_mapping = \
             predict_labels(filename, num_of_labels, trained_model, model_info)
         y_pred_dict[filename] = int(y_pred.item())
-        y_pred_dict['class_mapping'] = class_mapping
     
+    for key, val in y_pred_dict.items():
+        for map_key, map_val in class_mapping.items():
+            if val == map_val:
+                y_pred_dict[key] = map_key
+    
+    # print(class_mapping)
     print(y_pred_dict)
