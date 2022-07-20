@@ -102,7 +102,7 @@ def LSTM_train(dataset, batch_size, input_size,\
     choose_model, criterion, class_mapping,
     bin_class_task=True):
     
-    train_loader, val_loader, test_loader = \
+    train_loader, val_loader, test_loader, scaler = \
                 data_preparation(dataset, batch_size)
             
     # LSTM params
@@ -121,6 +121,7 @@ def LSTM_train(dataset, batch_size, input_size,\
 
     model_info = {
         'criterion': criterion,
+        'scaler': scaler,
         'optimizer': optimizer,
         'batch_size': batch_size,
         'scheduler': scheduler,
