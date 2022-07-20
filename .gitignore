@@ -80,7 +80,6 @@ venv.bak/
 *.npy
 *.png
 *.pt
-*.pkl
 *.zip
 *.csv
 *names.txt
