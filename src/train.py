@@ -196,8 +196,8 @@ if __name__ == "__main__":
             n_epochs = 100
             input_size = 43
             num_layers = 2
-            batch_size = 70
-            hidden_size = 100
+            batch_size = 64
+            hidden_size = 128
             dropout = 0.5
             lr = 1e-3
             weight_decay = 1e-5
