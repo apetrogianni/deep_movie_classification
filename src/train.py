@@ -216,17 +216,16 @@ if __name__ == "__main__":
 
             # Save Loss Function, optimizer, scheduler,
             # batch_size, model_params and the model in a .pkl file
-            with open('binary_best_model.pkl', 'wb') as f:
+            with open('2_class_best_model.pkl', 'wb') as f:
                 dump(model_info, f)
-
 
         preds = torch.Tensor(np.concatenate(preds).ravel())
         vals = np.concatenate(vals).ravel()
         class_labels = list(set(vals))
         vals = torch.Tensor(vals)
 
-        np.save("binary_LSTM_y_test.npy", vals)
-        np.save("binary_LSTM_y_pred.npy", preds)
+        np.save("2_class_LSTM_y_test.npy", vals)
+        np.save("2_class_LSTM_y_pred.npy", preds)
 
         accuracy, f1_score_macro, cm, class_labels, precision_recall = \
             calculate_bin_aggregated_metrics(preds, vals.float(), class_labels)
