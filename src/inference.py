@@ -133,7 +133,7 @@ if __name__ == '__main__':
             model_info = pkl_file
 
     num_of_labels = int(num_of_labels)
-    # TODO: class_mapping to fix the output!
+    
     if os.path.isdir(videos_path):
         for filename in os.listdir(videos_path):
             if filename.endswith(".mp4.npy"):
