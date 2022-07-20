@@ -118,7 +118,7 @@ if __name__ == '__main__':
     model_path = os.path.abspath(trained_model)
     model_path = os.path.dirname(model_path)
     
-    # feature_extraction(videos_path)
+    feature_extraction(videos_path)
     videos_path = videos_path[-1]
 
     print("\n====================== INFERENCE ======================\n")
