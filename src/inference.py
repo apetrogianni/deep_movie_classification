@@ -2,10 +2,10 @@
     This script is used to classify .mp4 movie-shots.
 
     Usage: 
-        python3 inference.py -i <input> -m /pretrained_models/2_class/2_class_best_checkpoint.pt
+        python3 inference.py -i <input> -m ../pretrained_models/2_class/2_class_best_checkpoint.pt
 
         ,where <input> is the full path of an .mp4 file 
-        or a folder of .mp4 files, and </pretrained_models/2_class/2_class_best_checkpoint.pt>
+        or a folder of .mp4 files, and <../pretrained_models/2_class/2_class_best_checkpoint.pt>
         is the full path of the model (in "pretrained_models" folder) to load for the prediction.
 
     Returns:
