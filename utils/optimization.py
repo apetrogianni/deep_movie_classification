@@ -162,7 +162,8 @@ class Optimization:
         plt.savefig("LSTM_class_losses.png")
         plt.close()
 
-    def evaluate(self, test_loader, best_model, bin_class_task=True):
+    def evaluate(self, test_loader, best_model, \
+        bin_class_task=True, inference=False):
         best_model.eval()
         with torch.no_grad():
             predictions = []
@@ -175,17 +176,22 @@ class Optimization:
                 X_test_packed = pack(X_test.float(), X_test_original_len, batch_first=True)
 
                 y_pred = best_model(X_test_packed, X_test_original_len)
-                y_pred = y_pred.squeeze().float()
+                y_pred = y_pred.squeeze(1).float()
 
                 # retrieve numpy array
                 y_pred = y_pred.detach().numpy()
-
                 predictions.append(y_pred)
 
-                y_test = y_test.detach().numpy()
-                values.append(y_test)
+                if inference == False:
+                    y_test = y_test.detach().numpy()
+                    values.append(y_test)
                 
         if bin_class_task:
+            if inference:
+                predictions = np.concatenate(predictions).ravel()
+                predictions_tensor = (torch.Tensor(predictions))
+                return predictions_tensor
+                
             values = np.concatenate(values).ravel()
             predictions = np.concatenate(predictions).ravel()
 
@@ -194,9 +200,13 @@ class Optimization:
 
             accuracy, f1_score_macro, cm, precision_recall = calculate_bin_metrics(predictions_tensor, values_tensor.float())
         else: 
+            if inference:
+                predictions = np.concatenate(predictions)
+                predictions_tensor = (torch.Tensor(predictions))
+                return predictions_tensor
             values = np.concatenate(values).ravel()
             predictions = np.concatenate(predictions)
-
+            
             values_tensor = (torch.Tensor(values))
             predictions_tensor = (torch.Tensor(predictions))
 

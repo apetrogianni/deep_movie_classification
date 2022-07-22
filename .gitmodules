@@ -1,3 +1,4 @@
 [submodule "multimodal_movie_analysis"]
 	path = multimodal_movie_analysis
 	url = https://github.com/tyiannak/multimodal_movie_analysis.git
+	ignore = dirty

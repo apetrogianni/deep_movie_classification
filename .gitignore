@@ -1,3 +1,5 @@
+.idea
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -84,5 +86,6 @@ venv.bak/
 *.zip
 *.csv
 *names.txt
+*metrics.txt
 
 *__pycache__/generic_model.cpython-38.pyc

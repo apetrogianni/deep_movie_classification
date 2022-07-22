@@ -46,11 +46,10 @@ class LSTMModelBinary(nn.Module):
         packed_output, _ = self.lstm(X)
         # output shape:(batch_size,seq_length,hidden_size)
         output, _ = unpack(packed_output, batch_first=True)
+
         last_states = self.last_by_index(output, lengths)
         last_states = self.drop(last_states)
-
         output = self.fnn(last_states)
-
         return output
 
     @staticmethod
@@ -59,7 +58,7 @@ class LSTMModelBinary(nn.Module):
         idx = (lengths - 1).view(-1, 1).expand(outputs.size(0),
                                                outputs.size(2)).unsqueeze(1)
 
-        return outputs.gather(1, idx.type(torch.int64)).squeeze()
+        return outputs.gather(1, idx.type(torch.int64)).squeeze(1) 
 
 
 class LSTMModel3(nn.Module):
@@ -87,7 +86,7 @@ class LSTMModel3(nn.Module):
         output, _ = unpack(packed_output, batch_first=True)
         last_states = self.last_by_index(output, lengths)
         last_states = self.drop(last_states)
-
+        
         output = self.fnn(last_states)
 
         return output
@@ -98,7 +97,7 @@ class LSTMModel3(nn.Module):
         idx = (lengths - 1).view(-1, 1).expand(outputs.size(0),
                                                outputs.size(2)).unsqueeze(1)
 
-        return outputs.gather(1, idx.type(torch.int64)).squeeze()
+        return outputs.gather(1, idx.type(torch.int64)).squeeze(1)
 
 
 class LSTMModel4(nn.Module):
@@ -137,7 +136,7 @@ class LSTMModel4(nn.Module):
         idx = (lengths - 1).view(-1, 1).expand(outputs.size(0),
                                                outputs.size(2)).unsqueeze(1)
 
-        return outputs.gather(1, idx.type(torch.int64)).squeeze()
+        return outputs.gather(1, idx.type(torch.int64)).squeeze(1)
 
 
 class LSTMModel10(nn.Module):
@@ -176,4 +175,4 @@ class LSTMModel10(nn.Module):
         idx = (lengths - 1).view(-1, 1).expand(outputs.size(0),
                                                outputs.size(2)).unsqueeze(1)
 
-        return outputs.gather(1, idx.type(torch.int64)).squeeze()
+        return outputs.gather(1, idx.type(torch.int64)).squeeze(1)

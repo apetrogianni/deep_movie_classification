@@ -2,15 +2,13 @@ import os
 import sys
 sys.path.append('..')
 import torch
-import numpy as np
-from scipy import ndimage
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence as pad
 from sklearn.model_selection import train_test_split
 import matplotlib
 matplotlib.use('Agg')
 from utils.data_scaling import TimeSeriesStandardScaling
-from utils.load_dataset import LSTMDataset, load_data
+from utils.load_dataset import (LSTMDataset, load_data)
 
 print_class_map = True
 
@@ -40,6 +38,9 @@ def my_collate(batch):
 
 
 def data_preparation(videos_dataset, batch_size):
+    # Define Scaler
+    scaler = TimeSeriesStandardScaling()
+
     # Create train, validation and test DataLoaders
     X = [x[0] for x in videos_dataset]
     y = [x[1] for x in videos_dataset]
@@ -48,9 +49,6 @@ def data_preparation(videos_dataset, batch_size):
         train_test_split(X, y, test_size=0.20, stratify=y)
     X_train, X_val, y_train, y_val = \
         train_test_split(X_train, y_train, test_size=0.12, stratify=y_train)
-
-    # Define Scaler
-    scaler = TimeSeriesStandardScaling()
 
     X_train, y_train, train_lengths = \
         load_data(X_train, y_train, True, scaler=scaler)
@@ -63,14 +61,14 @@ def data_preparation(videos_dataset, batch_size):
     test_dataset = LSTMDataset(X_test, y_test, test_lengths)
 
     # Define a DataLoader for each set
-    train_loader = DataLoader(train_dataset, batch_size=batch_size,\
-        collate_fn=my_collate, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size,\
-        collate_fn=my_collate, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size,\
-        collate_fn=my_collate, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+                              collate_fn=my_collate, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size,
+                            collate_fn=my_collate, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size,
+                             collate_fn=my_collate, shuffle=True)
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, scaler
 
 
 def create_dataset(videos_path):

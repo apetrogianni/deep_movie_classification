@@ -102,7 +102,7 @@ def LSTM_train(dataset, batch_size, input_size,\
     choose_model, criterion, class_mapping,
     bin_class_task=True):
     
-    train_loader, val_loader, test_loader = \
+    train_loader, val_loader, test_loader, scaler = \
                 data_preparation(dataset, batch_size)
             
     # LSTM params
@@ -121,6 +121,7 @@ def LSTM_train(dataset, batch_size, input_size,\
 
     model_info = {
         'criterion': criterion,
+        'scaler': scaler,
         'optimizer': optimizer,
         'batch_size': batch_size,
         'scheduler': scheduler,
@@ -194,9 +195,9 @@ if __name__ == "__main__":
 
             n_epochs = 100
             input_size = 43
-            num_layers = 1
-            batch_size = 70
-            hidden_size = 100
+            num_layers = 2
+            batch_size = 64
+            hidden_size = 128
             dropout = 0.5
             lr = 1e-3
             weight_decay = 1e-5
@@ -215,17 +216,16 @@ if __name__ == "__main__":
 
             # Save Loss Function, optimizer, scheduler,
             # batch_size, model_params and the model in a .pkl file
-            with open('binary_best_model.pkl', 'wb') as f:
+            with open('2_class_best_model.pkl', 'wb') as f:
                 dump(model_info, f)
-
 
         preds = torch.Tensor(np.concatenate(preds).ravel())
         vals = np.concatenate(vals).ravel()
         class_labels = list(set(vals))
         vals = torch.Tensor(vals)
 
-        np.save("binary_LSTM_y_test.npy", vals)
-        np.save("binary_LSTM_y_pred.npy", preds)
+        np.save("2_class_LSTM_y_test.npy", vals)
+        np.save("2_class_LSTM_y_pred.npy", preds)
 
         accuracy, f1_score_macro, cm, class_labels, precision_recall = \
             calculate_bin_aggregated_metrics(preds, vals.float(), class_labels)
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
             # Select parameters for each experiment
             if len(videos_path) == 3:
-                n_epochs = 1
+                n_epochs = 100
                 input_size = 43 
                 num_layers = 1
                 batch_size = 32
