@@ -125,7 +125,7 @@ if __name__ == '__main__':
     pkl_files = []
     pkl_path = os.path.dirname(os.path.abspath(__file__))
     for filename in os.listdir(pkl_path):
-            if filename.endswith("_model.pkl"):
+            if filename.endswith("_class_model.pkl"):
                 pkl_files.append(filename)
 
     for pkl_file in pkl_files:
