@@ -5,6 +5,7 @@ to normalize the data column-wise (for each feature).
 import torch
 import numpy as np
 import matplotlib
+from sklearn.decomposition import PCA
 matplotlib.use('Agg')
 
 
