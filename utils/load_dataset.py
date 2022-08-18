@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence as pad
 from sklearn.model_selection import train_test_split
 import matplotlib
+from utils.data_scaling import TimeSeriesPCA
 matplotlib.use('Agg')
 
 print_class_map = True
@@ -23,21 +24,22 @@ class LSTMDataset(Dataset):
         return self.X[index], self.y[index], self.lengths[index]
 
 
-def load_data(X_in, y, check_train, scaler, inference=False):
+def load_data(X_in, y, check_train, scaler, 
+    inference=False, pca=None, pretrained=None):
     # for train/val/test sets
-
     if inference:
         X_to_tensor = np.load(X_in)
         
         x_len = []
         X = []
         label = []
-        
-        # keep only specific features
+
+        # keep only specific hand-crafted features
         # (remove histograms)
-        X_to_tensor = X_to_tensor[:, 45:89]
-        X_to_tensor = np.array([ndimage.median_filter(s, 4)
-                                for s in X_to_tensor.T]).T
+        if pretrained is None:
+            X_to_tensor = X_to_tensor[:, 45:89]
+            X_to_tensor = np.array([ndimage.median_filter(s, 4)
+                                    for s in X_to_tensor.T]).T
 
         label = [-1]
         x_len.append(X_to_tensor.shape[0])
@@ -63,11 +65,12 @@ def load_data(X_in, y, check_train, scaler, inference=False):
             """
             X_to_tensor = np.load(data[0])
 
-            # keep only specific features
+            # keep only specific hand-crafted features
             # (remove histograms)
-            X_to_tensor = X_to_tensor[:, 45:89]
-            X_to_tensor = np.array([ndimage.median_filter(s, 4)
-                                    for s in X_to_tensor.T]).T
+            if pretrained is None:
+                X_to_tensor = X_to_tensor[:, 45:89]
+                X_to_tensor = np.array([ndimage.median_filter(s, 4)
+                                        for s in X_to_tensor.T]).T
 
             y = data[1]
             labels.append(y)
@@ -77,7 +80,12 @@ def load_data(X_in, y, check_train, scaler, inference=False):
         # data normalization
         if check_train:
             X_scaled = scaler.fit_transform(X)
+            print(len(X_scaled))
+            if pretrained == 'VGG':
+                X_scaled = pca.fit_transform(X_scaled)
         else:
             X_scaled = scaler.transform(X)
+            if pretrained == 'VGG':
+                X_scaled = pca.transform(X_scaled)
 
-    return X_scaled, labels, x_len
+    return X_scaled, labels, x_len, pca
