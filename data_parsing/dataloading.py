@@ -37,7 +37,7 @@ def my_collate(batch):
     return sequences_padded, labels, lengths
 
 
-def data_preparation(videos_dataset, batch_size):
+def data_preparation(videos_dataset, batch_size, pretrained=None):
     # Define Scaler
     scaler = TimeSeriesStandardScaling()
 
@@ -50,14 +50,16 @@ def data_preparation(videos_dataset, batch_size):
     X_train, X_val, y_train, y_val = \
         train_test_split(X_train, y_train, test_size=0.12, stratify=y_train)
 
-    X_train, y_train, train_lengths = \
-        load_data(X_train, y_train, True, scaler=scaler)
+    X_train, y_train, train_lengths, pca = \
+        load_data(X_train, y_train, True, scaler=scaler, pretrained=pretrained)
     train_dataset = LSTMDataset(X_train, y_train, train_lengths)
 
-    X_val, y_val, val_lengths = load_data(X_val, y_val, False, scaler=scaler)
+    num_of_features = X_train[0].size(1)
+
+    X_val, y_val, val_lengths, _ = load_data(X_val, y_val, False, scaler=scaler, pca=pca)
     val_dataset = LSTMDataset(X_val, y_val, val_lengths)
 
-    X_test, y_test, test_lengths = load_data(X_test, y_test, False, scaler=scaler)
+    X_test, y_test, test_lengths, _ = load_data(X_test, y_test, False, scaler=scaler, pca=pca)
     test_dataset = LSTMDataset(X_test, y_test, test_lengths)
 
     # Define a DataLoader for each set
@@ -68,10 +70,15 @@ def data_preparation(videos_dataset, batch_size):
     test_loader = DataLoader(test_dataset, batch_size=batch_size,
                              collate_fn=my_collate, shuffle=True)
 
-    return train_loader, val_loader, test_loader, scaler
+    if pretrained == 'VGG':
+        print("Number of features, after applying PCA: ", num_of_features)
+    else: 
+        num_of_features = 43
+
+    return train_loader, val_loader, test_loader, scaler, pca, num_of_features
 
 
-def create_dataset(videos_path):
+def create_dataset(videos_path, pretrained = None):
     """
         Parameters:
             videos_path: a list of the full path class-folders
@@ -94,7 +101,12 @@ def create_dataset(videos_path):
             class_mapping[label] = label_int
             # print(f" \'{label}\': {label_int}")
         for filename in os.listdir(folder):
-            if filename.endswith(".mp4.npy"):
+            if pretrained == 'VGG':
+                if filename.endswith("VGG16.npy"):
+                    full_path_name = folder + "/" + filename
+                    videos_dataset.append(tuple((full_path_name, label_int)))
+            # hand-crafted features (multimodal_movie_analysis library)
+            elif filename.endswith(".mp4.npy"):
                 full_path_name = folder + "/" + filename
                 videos_dataset.append(tuple((full_path_name, label_int)))
 

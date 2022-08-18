@@ -59,6 +59,12 @@ def parse_arguments():
                         nargs='+', 
                         help="Movie shots folder paths" +
                         "containing the shot (mp4 and npy) files")
+    parser.add_argument("-m", 
+                        "--pretrained_model", 
+                        required=False,
+                        type=str,
+                        default=None, 
+                        help="Use features extracted from a pretrained model")
     parser.add_argument("-f", 
                         "--num_of_folds", 
                         required=False,
@@ -96,15 +102,15 @@ def weight_init(m):
                 param.data.fill_(0)
 
 
-def LSTM_train(dataset, batch_size, input_size,\
+def LSTM_train(dataset, batch_size, input_size,
     hidden_size, num_layers, output_size,
     dropout, learning_rate, weight_decay,
     choose_model, criterion, class_mapping,
-    bin_class_task=True):
+    bin_class_task=True, pretrained=None):
     
-    train_loader, val_loader, test_loader, scaler = \
-                data_preparation(dataset, batch_size)
-            
+    train_loader, val_loader, test_loader, scaler, pca, num_of_features = \
+                data_preparation(dataset, batch_size, pretrained=pretrained)
+    input_size = num_of_features
     # LSTM params
     model_params = {
         'input_size': input_size,
@@ -122,6 +128,7 @@ def LSTM_train(dataset, batch_size, input_size,\
     model_info = {
         'criterion': criterion,
         'scaler': scaler,
+        'pca' : pca,
         'optimizer': optimizer,
         'batch_size': batch_size,
         'scheduler': scheduler,
@@ -161,6 +168,7 @@ if __name__ == "__main__":
 
     videos_path = args.videos_path
     num_of_folds = args.num_of_folds
+    pretrained = args.pretrained_model
     videos_path = [item for sublist in videos_path for item in sublist]
     seed_all(42)
 
@@ -169,8 +177,11 @@ if __name__ == "__main__":
     model_info = {}
     num_of_shots_per_class = {}
 
-    # extract features from .mp4 files 
-    feature_extraction(videos_path)
+    # extract hand-crafted features from .mp4 files 
+    if pretrained is None:
+        feature_extraction(videos_path)
+    else:
+        print('Use features from pre-trained ', pretrained, ' model')
 
     for folder in videos_path:
         """
@@ -178,8 +189,12 @@ if __name__ == "__main__":
         (.npy files contain the extracted features).
         """
         class_name = os.path.basename(folder)
-        np_feature_files = fnmatch.filter(os.listdir(folder), '*mp4.npy')
-        num_of_shots_per_class[class_name] = len(np_feature_files)
+        if pretrained == 'VGG':
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*VGG16.npy')
+            num_of_shots_per_class[class_name] = len(np_feature_files)
+        else:
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*.mp4.npy')
+            num_of_shots_per_class[class_name] = len(np_feature_files)
 
     print("\nNumber of movie-shots per class: ", \
                 num_of_shots_per_class)
@@ -191,10 +206,9 @@ if __name__ == "__main__":
         for i in range(0, num_of_folds):
             print(f"---- Fold {i+1}/{num_of_folds} ----")
             # create LSTM dataset & DataLoaders
-            dataset, class_mapping = create_dataset(videos_path)
+            dataset, class_mapping = create_dataset(videos_path, pretrained=pretrained)
 
             n_epochs = 100
-            input_size = 43
             num_layers = 2
             batch_size = 64
             hidden_size = 128
@@ -207,12 +221,12 @@ if __name__ == "__main__":
 
             model_info, preds, vals = \
                 LSTM_train(dataset=dataset,batch_size=batch_size,
-                input_size=input_size, hidden_size=hidden_size, 
+                input_size=None, hidden_size=hidden_size, 
                 num_layers=num_layers, output_size=output_size, 
                 dropout=dropout, learning_rate=lr, 
                 weight_decay=weight_decay, choose_model='bin_lstm',
                 criterion=criterion, class_mapping=class_mapping, 
-                bin_class_task=True)  
+                bin_class_task=True, pretrained=pretrained)  
 
             # Save Loss Function, optimizer, scheduler,
             # batch_size, model_params and the model in a .pkl file
@@ -260,7 +274,7 @@ if __name__ == "__main__":
         for i in range(0, num_of_folds):
             print(f"---- Fold {i+1}/{num_of_folds} ----")
             # create LSTM dataset & DataLoaders
-            dataset, class_mapping = create_dataset(videos_path)
+            dataset, class_mapping = create_dataset(videos_path, pretrained=pretrained)
 
             # Select parameters for each experiment
             if len(videos_path) == 3:
@@ -305,7 +319,7 @@ if __name__ == "__main__":
                 num_layers=num_layers, output_size=output_size, 
                 dropout=dropout, learning_rate=lr, weight_decay=weight_decay, 
                 choose_model=multi_model, criterion=criterion, 
-                class_mapping=class_mapping, bin_class_task=False)  
+                class_mapping=class_mapping, bin_class_task=False, pretrained=pretrained)  
             
             # Save Loss Function, optimizer, scheduler,
             # batch_size, model_params and the model in a .pkl file
