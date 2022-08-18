@@ -54,8 +54,8 @@ Experiment | Classes
 ### 2.1 Sequential method
 
 The LSTM model can be trained for the 4 classification tasks that were mentioned above.
-i.e. To train the LSTM model, for the 3-class experiment:
 
+* To train the LSTM model with the [sequential_features](https://github.com/magcil/movie_shot_classification_dataset/tree/main/sequential_features) _(extracted from 'multimodal_movie_analysis')_, for the 3-class experiment:
 
 ```shell
 cd src
@@ -64,7 +64,13 @@ python3 train.py -v home/3_class/Zoom home/3_class/Static home/3_class/Vertical_
 
 > where _"home/3_class/<class_name>"_ is the full path of the class-folder, containing the .mp4 files
 
-To get aggregated results for a specific number of folds use the flag "-f". For example, for 10-folds:
+* To train the LSTM model with the [sequential_vgg_features](https://github.com/magcil/movie_shot_classification_dataset/tree/main/sequential_vgg_features) extracted from the first fully connected layer of the pretrained 'VGG16', use the flag ```-m```. i.e. for the 3-class experiment:
+```shell
+cd src
+python3 train.py -v home/3_class_VGG/Zoom home/3_class_VGG/Static home/3_class_VGG/Vertical_and_horizontal_movements -m VGG
+```
+
+To get aggregated results for a specific number of folds use the flag ```-f```. For example, for 10-folds:
 
 ```shell
 python3 train.py -v home/3_class/Zoom home/3_class/Static home/3_class/Vertical_and_horizontal_movements -f 10
@@ -78,7 +84,7 @@ The following files will be saved:
 
 ## 3. Inference
 
-Four pretrained models are saved in the [pretrained_models](https://github.com/apetrogianni/deep_movie_classification/tree/main/pretrained_models) folder. Each one can be loaded for inference. While in ```/src``` folder:
+Four pretrained models -one for each experiment- are saved in the [pretrained_models](https://github.com/apetrogianni/deep_movie_classification/tree/main/pretrained_models) folder. Each one can be loaded for inference. While in ```/src``` folder:
 
 ```shell
 python3 inference.py -i <input> -m <../pretrained_models/2_class_best_checkpoint.pt>
