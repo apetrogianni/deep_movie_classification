@@ -279,7 +279,6 @@ if __name__ == "__main__":
             # Select parameters for each experiment
             if len(videos_path) == 3:
                 n_epochs = 100
-                input_size = 43 
                 num_layers = 1
                 batch_size = 32
                 hidden_size = 64
@@ -290,7 +289,6 @@ if __name__ == "__main__":
                 multi_model= '3_class_lstm'
             elif len(videos_path) == 4:
                 n_epochs = 100
-                input_size = 43 
                 num_layers = 1
                 batch_size = 32
                 hidden_size = 40
@@ -301,7 +299,6 @@ if __name__ == "__main__":
                 multi_model= '4_class_lstm'
             elif len(videos_path) == 10:
                 n_epochs = 100
-                input_size = 43 
                 num_layers = 1
                 batch_size = 13
                 hidden_size = 35
@@ -315,7 +312,7 @@ if __name__ == "__main__":
 
             model_info, preds, vals = \
                 LSTM_train(dataset=dataset,batch_size=batch_size,\
-                input_size=input_size, hidden_size=hidden_size, 
+                input_size=None, hidden_size=hidden_size, 
                 num_layers=num_layers, output_size=output_size, 
                 dropout=dropout, learning_rate=lr, weight_decay=weight_decay, 
                 choose_model=multi_model, criterion=criterion, 

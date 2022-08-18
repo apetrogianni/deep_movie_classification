@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import pad_sequence as pad
 from sklearn.model_selection import train_test_split
 import matplotlib
 matplotlib.use('Agg')
-from utils.data_scaling import TimeSeriesStandardScaling
+from utils.data_scaling import TimeSeriesStandardScaling, TimeSeriesPCA
 from utils.load_dataset import (LSTMDataset, load_data)
 
 print_class_map = True
@@ -41,6 +41,11 @@ def data_preparation(videos_dataset, batch_size, pretrained=None):
     # Define Scaler
     scaler = TimeSeriesStandardScaling()
 
+    if pretrained == 'VGG':
+        pca = TimeSeriesPCA(n_components=0.95)
+    else:
+        pca=None
+
     # Create train, validation and test DataLoaders
     X = [x[0] for x in videos_dataset]
     y = [x[1] for x in videos_dataset]
@@ -51,15 +56,21 @@ def data_preparation(videos_dataset, batch_size, pretrained=None):
         train_test_split(X_train, y_train, test_size=0.12, stratify=y_train)
 
     X_train, y_train, train_lengths, pca = \
-        load_data(X_train, y_train, True, scaler=scaler, pretrained=pretrained)
+        load_data(X_train, y_train, True, scaler=scaler, pca=pca, pretrained=pretrained)
     train_dataset = LSTMDataset(X_train, y_train, train_lengths)
 
     num_of_features = X_train[0].size(1)
+    if pretrained == 'VGG':
+        print("Number of features, after applying PCA: ", num_of_features)
+    else: 
+        num_of_features = 43
 
-    X_val, y_val, val_lengths, _ = load_data(X_val, y_val, False, scaler=scaler, pca=pca)
+    X_val, y_val, val_lengths, _ = \
+        load_data(X_val, y_val, False, scaler=scaler, pca=pca, pretrained=pretrained)
     val_dataset = LSTMDataset(X_val, y_val, val_lengths)
 
-    X_test, y_test, test_lengths, _ = load_data(X_test, y_test, False, scaler=scaler, pca=pca)
+    X_test, y_test, test_lengths, _ = \
+        load_data(X_test, y_test, False, scaler=scaler, pca=pca, pretrained=pretrained)
     test_dataset = LSTMDataset(X_test, y_test, test_lengths)
 
     # Define a DataLoader for each set
@@ -69,11 +80,6 @@ def data_preparation(videos_dataset, batch_size, pretrained=None):
                             collate_fn=my_collate, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size,
                              collate_fn=my_collate, shuffle=True)
-
-    if pretrained == 'VGG':
-        print("Number of features, after applying PCA: ", num_of_features)
-    else: 
-        num_of_features = 43
 
     return train_loader, val_loader, test_loader, scaler, pca, num_of_features
 
