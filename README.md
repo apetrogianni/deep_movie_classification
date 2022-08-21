@@ -30,18 +30,18 @@ sudo apt install ffmpeg
 ```shell
 pip3 install -r requirements.txt
 ```
-### 1.3 The data
+<!-- ### 1.3 The data
 
-You can download the data from the [movie_shots_by_experiment](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature extraction process)_ for the movie shots, divided into 4 different experiments _(check "Experiments" below)_.
+You can download the data from the [movie_shots_by_experiment](https://drive.google.com/drive/folders/1saDBlGxu9SxtYkesu5G14W_zvXy1d5Bv?usp=sharing) folder, which contains all the .mp4 files _(along with the .npy files created after the feature extraction process)_ for the movie shots, divided into 4 different experiments _(check "Experiments" below)_. -->
 
 ## 2. Train 
 
 By combining different shot categories; four _(one binary and three multi-label)_ classification tasks are defined.
 
-<details><summary>Experiments</summary>
+<details><summary>Tasks</summary>
 <p> 
 
-Experiment | Classes
+Task | Classes
 | :--- | ---: 
 2_class   | Non_Static (818 shots) <br /> Static (985 shots)
 3_class  | Zoom (152 shots) <br />  Static (985 shots) <br /> Vertical_and_horizontal_movements (342 shots)
@@ -51,10 +51,23 @@ Experiment | Classes
 </p>
 </details>
 
+The experiments were conducted using the [dataset](https://github.com/magcil/movie_shot_classification_dataset.git) mentioned above after creating 4 different tasks:
+
+* The ```2_class``` task includes the **Static** and **Non-static** classes. The former consists of shots that have been annotated as static, while the latter contains all the classes from the original dataset that are associated with any type of camera movement. That is the corresponding sub-classes are: _Panoramic Lateral, Vertical Static, Zoom-in, Handheld, Aerial, Vertical Moving, Panoramic, Travelling-in, Travelling-out_. 
+
+* The ```3_class``` task includes the _Static_, _Zoom_ and _Vertical & Horizontal Movements_. The **Static** class is the one that was used in the aforementioned binary task. The **Zoom** class consists of the _Zoom-in, Travelling-in and Travelling-out_ sub-classes, which all contain shots in which the perimeter image changes at very fast intervals, while the centre image remains static or changes at a slower rate. The **Vertical \& Horizontal Movements** class consists of the _Vertical Static, Vertical Moving, Panoramic and Panoramic Lateral_ sub-classes from the original dataset, where the position of the camera is moving either in a vertical or in a horizontal way.
+
+* The ```4_class``` task includes the **Static** and **Zoom** classes of the 3-class problem, while the Vertical \& Horizontal Movements class was separated into 2 sub-classes; **Vertical movements**, which includes all vertical movements and consists of the _Vertical Static_ and _Vertical Moving_ original classes, and **Panoramic** that contains shots with lateral movements and consists of the _Panoramic_ and _Panoramic Lateral_ original classes.
+
+* The ```10-class``` task includes all provided classes from the original dataset; **Static, Panoramic, Zoom-in, Travelling-out, Vertical Static,
+Aerial, Travelling-in, Vertical Moving, Handheld and Panoramic Lateral**.
+
+
 ### 2.1 Sequential method
 
-The LSTM model can be trained for the 4 classification tasks that were mentioned above.
-i.e. To train the LSTM model, for the 3-class experiment:
+The LSTM model was trained for the 4 classification tasks that were mentioned above using the [sequential_features](https://github.com/magcil/movie_shot_classification_dataset/tree/main/sequential_features).
+
+i.e. For the 3-class task:
 
 
 ```shell
