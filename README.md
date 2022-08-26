@@ -67,8 +67,24 @@ python3 train.py -v home/3_class/Zoom home/3_class/Static home/3_class/Vertical_
 * To train the LSTM model with the [sequential_vgg_features](https://github.com/magcil/movie_shot_classification_dataset/tree/main/sequential_vgg_features) extracted from the first fully connected layer of the pretrained 'VGG16', use the flag ```-m```. i.e. for the 3-class experiment:
 ```shell
 cd src
-python3 train.py -v home/3_class_VGG/Zoom home/3_class_VGG/Static home/3_class_VGG/Vertical_and_horizontal_movements -m VGG
+python3 train.py -v sequential_vgg_features/3_class/Zoom sequential_vgg_features/3_class/Static sequential_vgg_features/3_class/Vertical_and_horizontal_movements -m VGG
 ```
+
+* To train the LSTM model with **googlenet**, **densenet**, **vgg19_bn** features modify the paths and the name after ```-m``` e.g.:
+
+```shell
+cd src
+python3 train.py -v googlenet/3_class/Zoom googlenet/3_class/Static googlenet/3_class/Vertical_and_horizontal_movements -m googlenet
+```
+
+### Release:
+
+- [ ] googlenet_features
+- [x] sequential_features
+- [x] sequential_vgg_features
+- [x] aggregated_features
+- [ ] densenet201_features
+- [ ] vgg19_bn_features
 
 To get aggregated results for a specific number of folds use the flag ```-f```. For example, for 10-folds:
 
