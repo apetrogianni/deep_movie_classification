@@ -191,10 +191,19 @@ if __name__ == "__main__":
         class_name = os.path.basename(folder)
         if pretrained == 'VGG':
             np_feature_files = fnmatch.filter(os.listdir(folder), '*VGG16.npy')
-            num_of_shots_per_class[class_name] = len(np_feature_files)
+        elif pretrained == 'googlenet':
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*_googlenet.npy')
+        elif pretrained == 'densenet201':
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*_densenet201.npy')
+        elif pretrained == 'vgg19_bn':
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*_vgg19_bn.npy')
+        elif pretrained == 'inceptionv3':
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*_inceptionv3.npy')
+        elif pretrained == 'shufflenetv2':
+            np_feature_files = fnmatch.filter(os.listdir(folder), '*_shufflenetv2.npy')
         else:
             np_feature_files = fnmatch.filter(os.listdir(folder), '*.mp4.npy')
-            num_of_shots_per_class[class_name] = len(np_feature_files)
+        num_of_shots_per_class[class_name] = len(np_feature_files)
 
     print("\nNumber of movie-shots per class: ", \
                 num_of_shots_per_class)
@@ -210,11 +219,11 @@ if __name__ == "__main__":
 
             n_epochs = 100
             num_layers = 2
-            batch_size = 64
+            batch_size = 16
             hidden_size = 128
-            dropout = 0.5
+            dropout = 0.0
             lr = 1e-3
-            weight_decay = 1e-5
+            weight_decay = 0.0
             output_size = 1
 
             criterion = nn.BCEWithLogitsLoss()

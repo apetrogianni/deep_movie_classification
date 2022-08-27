@@ -41,8 +41,8 @@ def data_preparation(videos_dataset, batch_size, pretrained=None):
     # Define Scaler
     scaler = TimeSeriesStandardScaling()
 
-    if pretrained == 'VGG':
-        pca = TimeSeriesPCA(n_components=0.95)
+    if pretrained is not None:
+        pca = TimeSeriesPCA(n_components=1024)
     else:
         pca=None
 
@@ -60,7 +60,7 @@ def data_preparation(videos_dataset, batch_size, pretrained=None):
     train_dataset = LSTMDataset(X_train, y_train, train_lengths)
 
     num_of_features = X_train[0].size(1)
-    if pretrained == 'VGG':
+    if pretrained is not None:
         print("Number of features, after applying PCA: ", num_of_features)
     else: 
         num_of_features = 43
@@ -110,11 +110,26 @@ def create_dataset(videos_path, pretrained = None):
             if pretrained == 'VGG':
                 if filename.endswith("VGG16.npy"):
                     full_path_name = folder + "/" + filename
-                    videos_dataset.append(tuple((full_path_name, label_int)))
-            # hand-crafted features (multimodal_movie_analysis library)
+            elif pretrained == 'googlenet':
+                if filename.endswith("_googlenet.npy"):
+                    full_path_name = folder + "/" + filename
+            elif pretrained == 'densenet201':
+                if filename.endswith("_densenet201.npy"):
+                    full_path_name = folder + "/" + filename
+            elif pretrained == 'vgg19_bn':
+                if filename.endswith("_vgg19_bn.npy"):
+                    full_path_name = folder + "/" + filename
+            elif pretrained == 'inceptionv3':
+                if filename.endswith("_inceptionv3.npy"):
+                    full_path_name = folder + "/" + filename
+            elif pretrained == 'shufflenetv2':
+                if filename.endswith("_shufflenetv2.npy"):
+                    full_path_name = folder + "/" + filename
             elif filename.endswith(".mp4.npy"):
+                # hand-crafted features (multimodal_movie_analysis library)
                 full_path_name = folder + "/" + filename
-                videos_dataset.append(tuple((full_path_name, label_int)))
+            
+            videos_dataset.append(tuple((full_path_name, label_int)))
 
     print_class_map = False
     print(class_mapping)
